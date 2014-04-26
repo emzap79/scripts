@@ -1,6 +1,8 @@
 #!/bin/bash
+# vim:fdm=marker
 
 # Configuration.# {{{
+
 out="foobar`date +%F`"
 if [ "$1" = "" ]; then
     echo "usage: $0 name_of_file.pdf"
@@ -8,19 +10,45 @@ if [ "$1" = "" ]; then
 fi
 size_old=$(ls -s "$1" | cut -d ' ' -f 1)
 size_old_hs=$(ls -hs "$1" | cut -d ' ' -f 1) # Human Readable Size
-###.Configuration.# }}}
+
+#.Configuration.# }}}
 # Dialoge.# {{{
-read -p "Muss die PDF auf Seitenformat A4 gebracht werden? (Y|n) " answer
+
+read -p "do you need your PDF to be scaled to a specific page size? (Y|n) " answer
 case $answer in
     Yes|yes|Y|y|"")
-        fitformat=yes
+        PS3="Enter desired pagesize: "
+        selOptions=("A3" "A4" "legal")
+        select opt in "${selOptions[@]}" "No pagesize at all: <None>"; do
+            case "$REPLY" in
+                1 ) echo "You chose $REPLY: $opt"
+                    fitformat=yes
+                    pagescale="a3"
+                    ;;
+                2 ) echo "You chose $REPLY: $opt"
+                    fitformat=yes
+                    pagescale="a4"
+                    ;;
+                3 ) echo "You chose $REPLY: $opt"
+                    fitformat=yes
+                    pagescale="legal"
+                    ;;
+                $(( ${#selOptions[@]}+1 )) )
+                    echo "Ok buddy, only resize then!"
+                    echo ""
+                    fitformat=no
+                    ;;
+                *) echo "#N/A... no valid option";continue
+                    ;;
+            esac; break
+        done
         ;;
     No|no|N|n)
         fitformat=no
         ;;
 esac
 
-read -p "Möchtest du die Datei ins S/W Format bringen? (Y|n) " answer
+read -p "would you like your output file to be B/W? (Y|n) " answer
 case $answer in
     Yes|yes|Y|y|"")
         togray=yes
@@ -30,7 +58,8 @@ case $answer in
         ;;
 esac
 
-read -p "Welche Qualität soll die neue PDF haben (low=l|medium=m|high=h|best=b)? " answer
+echo "define the pdfs output resolution (recommended: medium)"
+read -p "(low=l|medium=m|high=h|best=b) " answer
 case $answer in
     l)
         qual='/screen'
@@ -52,26 +81,33 @@ esac
 
 ###.Dialoge.# }}}
 # Backup.File.# {{{
+
 echo ""
-echo "Kopiere $1 nach /tmp/$$.pdf"
-cp -v "$1" /tmp/$$.pdf
+echo "copy $1 to /tmp/$$.pdf"
+cp "$1" /tmp/$$.pdf
+echo "done"
+sleep 1
+
 ###.Backup.File.# }}}
-# Fit to A4-Format.# {{{
+# Fit to pagescale # {{{
+
 if [[ $fitformat == "yes" ]]; then
     # Ausgabe
     echo ""
-    echo -n "PDF wird ins A4-Format eingepasst ..."
+    echo -n "pdf gets scaled into size $pagescale..."
     # Starte Ghostscript
     gs\
         -sDEVICE=pdfwrite\
         -dFIXEDMEDIA\
         -dPDFFitPage\
         -dCompatibilityLevel=1.4\
-        -sPAPERSIZE=a4\
+        -sPAPERSIZE=$pagescale\
         -o $out $1
 fi
+
 ###.Fit to A4-Format.# }}}
 # Convert PDF to Grayscale.# {{{
+
 # http://handyfloss.net/2008.09/making-a-pdf-grayscale-with-ghostscript/
 if [[ $togray == "yes" ]]; then
 gs \
@@ -83,10 +119,12 @@ gs \
     -dBATCH \
     -sOutputFile="$out"_grayscale.pdf $out
 fi
+
 ###.Convert PDF to Grayscale.# }}}
 # Resizing.PDF.#1.# {{{
+
 echo ""
-echo "$1 resizen mit Ghostscript"
+echo "$1 resize with ghostscript"
 gs\
     -sDEVICE=pdfwrite\
     -dCompatibilityLevel=1.4\
@@ -98,10 +136,12 @@ gs\
     -sOutputFile="$out" "$1"
 
 size_new=$(ls -s "$out" | cut -d ' ' -f 1)
+
 ###.Resizing.PDF.#1.# }}}
 # Resizing.PDF.#2.# {{{
+
 if [ "$size_old" -le "$size_new" ]; then
-    echo "Starte zweiten Versuch... "
+    echo "start second intent ... "
     pdftops "$1" "bar.ps"
     # pdf2ps "$1" "bar.ps"
     pstopdf "bar.ps" "$out"
@@ -109,19 +149,23 @@ if [ "$size_old" -le "$size_new" ]; then
     rm bar.ps
     size_new=$(ls -s "$out" | cut -d ' ' -f 1)
     if [ "$size_old" -le "$size_new" ]; then
-        echo "PDF $1 ...konnte nicht verkleinert werden."
+        echo "sorry, couldn't resize $1"
         rm $out
         exit 1;
     fi
 fi
+
 ###.Resizing.PDF.#2.# }}}
 # Final Output.# {{{
+
 size_new_hs=$(ls -hs "$out" | cut -d ' ' -f 1)
 mv "$out" "$1"
 echo ""
-echo "`basename "$1"`... verkleinert von $size_old_hs auf $size_new_hs!"
+echo "`basename "$1"`... resized from $size_old_hs to $size_new_hs!"
+
 ###.Final Output.# }}}
 # Annotations#{{{
+
 #-dPDFSETTINGS=configuration to presets the "distiller parameters" to one of four
 #predefined settings:
 
@@ -130,4 +174,5 @@ echo "`basename "$1"`... verkleinert von $size_old_hs auf $size_new_hs!"
 #/printer selects output similar to the Acrobat Distiller "Print Optimized" setting.
 #/prepress selects output similar to Acrobat Distiller "Prepress Optimized" setting.
 #/default selects output intended to be useful across a wide variety of uses, possibly at the expense of a larger output file.
+
 # EOF#}}}
