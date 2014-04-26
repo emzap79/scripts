@@ -1,6 +1,6 @@
 # Collection of Bash-Scripts
 This is my collection of bash-scripts I consider useful in on a daily base use.
-So far it contains following scripts:
+Until now it contains following scripts:
 
 - pdfresize
 - ~~huge_bash_code~~
