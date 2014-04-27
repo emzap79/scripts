@@ -12,6 +12,10 @@ Until then, feel free to make whatever you want (see license agreement below!).
 Since I maintain my repo for fun, I want to point out you're using every script
 on your own risk... :octocat: Shouldn't do no harm though!
 
+## Usage
+Clone this repo and drop the scripts in your ~/bin directory. Make them
+executable with `chmod 755 ~/bin/<script>` and send me any type of comments
+and/or issues.
 
 ## License Agreement
 "THE BEER-WARE LICENSE" (Revision 42):
