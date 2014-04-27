@@ -1,26 +1,24 @@
 #!/bin/bash
 # vim:fdm=marker
 
-# Configuration.# {{{
+# Configuration # {{{
 
-out="foobar`date +%F`"
+size_old=$(ls -s "$1" | cut -d ' ' -f 1)
+inputfile="$1"
 if [ "$1" = "" ]; then
     echo "usage: $0 name_of_file.pdf"
     exit 0
 fi
-size_old=$(ls -s "$1" | cut -d ' ' -f 1)
-size_old_hs=$(ls -hs "$1" | cut -d ' ' -f 1) # Human Readable Size
-inputfile="$1"
 
-#.Configuration.# }}}
-# Dialoge.# {{{
+# Configuration # }}}
+# Dialoge # {{{
 
 read -p "do you need your PDF to be scaled to a specific page size? (Y|n) " answer
 case $answer in
     Yes|yes|Y|y|"")
         PS3="Enter desired pagesize: "
         selOptions=("A3" "A4" "legal")
-        select opt in "${selOptions[@]}" "No pagesize at all: <None>"; do
+        select opt in "${selOptions[@]}" "No pagesize: <None>"; do
             case "$REPLY" in
                 1 ) echo "You chose $REPLY: $opt"
                     fitformat=yes
@@ -59,8 +57,12 @@ case $answer in
         ;;
 esac
 
+echo ""
 echo "define the pdfs output resolution "
-echo "(low=l|medium=m|high=h|best=b)"
+echo "- [l]ow"
+echo "- [m]edium"
+echo "- [h]igh"
+echo "- [b]est"
 echo ""
 read -p "your choice (recommended: medium)? " answer
 case $answer in
@@ -68,7 +70,7 @@ case $answer in
         qual='/screen'
         col='/sRGB'
         ;;
-    m|medium)
+    m|medium|"")
         qual='/ebook'
         col='/sRGB'
         ;;
@@ -82,7 +84,7 @@ case $answer in
         col='/LeaveColorUnchanged'
 esac
 
-###.Dialoge.# }}}
+### Dialoge # }}}
 # Backup File # {{{
 
 echo ""
@@ -105,12 +107,12 @@ if [[ $fitformat == "yes" ]]; then
         -dPDFFitPage\
         -dCompatibilityLevel=1.4\
         -sPAPERSIZE=$pagescale\
-        -o "$out"_pagescale.pdf $inputfile
-    inputfile="$out"_pagescale.pdf
+        -o "pdfres_out_pagescale" $inputfile
+    inputfile="pdfres_out_pagescale"
 fi
 
-###.Fit to A4-Format.# }}}
-# Convert PDF to Grayscale.# {{{
+### Fit to A4-Format # }}}
+# Convert PDF to Grayscale # {{{
 
 # http://handyfloss.net/2008.09/making-a-pdf-grayscale-with-ghostscript/
 if [[ $togray == "yes" ]]; then
@@ -121,12 +123,12 @@ if [[ $togray == "yes" ]]; then
         -dCompatibilityLevel=1.4 \
         -dNOPAUSE \
         -dBATCH \
-        -sOutputFile="$out"_grayscale.pdf $inputfile
-    inputfile="$out"_grayscale.pdf
+        -sOutputFile="pdfres_out_grayscale" $inputfile
+    inputfile="pdfres_out_grayscale"
 fi
 
 
-###.Convert PDF to Grayscale.# }}}
+### Convert PDF to Grayscale # }}}
 # Resizing PDF #1 # {{{
 
 echo ""
@@ -139,22 +141,24 @@ gs\
     -dQUIET\
     -dColorConversionStrategy="$col"\
     -dBATCH\
-    -sOutputFile="$out"_resized_1.pdf $inputfile
-inputfile="$out"_resized_1.pdf
-size_new=$(ls -s "$inputfile" | cut -d ' ' -f 1)
+    -sOutputFile="pdfres_out_resized_1" $inputfile
+inputfile="pdfres_out_resized_1"
+size_new="$(ls -s $inputfile | cut -d ' ' -f 1)"
+echo "new size $size_new old size $size_old"
 
 ### Resizing PDF #1 # }}}
 # Resizing PDF #2 # {{{
 
 if [ "$size_old" -le "$size_new" ]; then
     echo "start second intent ... "
-    pdftops "$inputfile" "bar.ps"
-    pstopdf "bar.ps" "$out"_resized_2.pdf
-    # pdf2ps "$inputfile" "bar.ps"
-    # ps2pdf "bar.ps" "$out"_resized_2.pdf
+    # pdftops "$inputfile" "bar.ps"
+    # pstopdf "bar.ps" "pdfres_out_resized_2.pdf"
+    pdf2ps "$inputfile" "bar.ps"
+    ps2pdf "bar.ps" "pdfres_out_resized_2.pdf"
     rm bar.ps
-    inputfile="$out"_resized_2.pdf
-    size_new=$(ls -s "$inputfile" | cut -d ' ' -f 1)
+    inputfile="pdfres_out_resized_2.pdf"
+    size_new=$(ls -s $inputfile | cut -d ' ' -f 1)
+echo "new size $size_new old size $size_old"
     if [ "$size_old" -le "$size_new" ]; then
         echo "sorry, couldn't resize $1"
         rm $inputfile
@@ -163,14 +167,13 @@ if [ "$size_old" -le "$size_new" ]; then
 fi
 
 ### Resizing PDF #2 # }}}
-# Final Output.# {{{
+# Final Output # {{{
 
-size_new_hs=$(ls -hs "$inputfile" | cut -d ' ' -f 1)
 mv "$inputfile" "$1"
 echo ""
-echo "`basename "$1"`... resized from $size_old_hs to $size_new_hs!"
+echo "`basename "$1"`... resized from $size_old to $size_new bites!"
 
-###.Final Output.# }}}
+### Final Output # }}}
 # Annotations#{{{
 
 #-dPDFSETTINGS=configuration to presets the "distiller parameters" to one of four
