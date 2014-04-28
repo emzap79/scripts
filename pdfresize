@@ -141,10 +141,10 @@ gs\
     -dQUIET\
     -dColorConversionStrategy="$col"\
     -dBATCH\
-    -sOutputFile="pdfres_out_resized_1" $inputfile
-inputfile="pdfres_out_resized_1"
+    -sOutputFile="pdfres_out_resized_1.pdf" $inputfile
+inputfile="pdfres_out_resized_1.pdf"
 size_new="$(ls -s $inputfile | cut -d ' ' -f 1)"
-echo "new size $size_new old size $size_old"
+size_new_hs=$(ls -hs $inputfile | cut -d ' ' -f 1)
 
 ### Resizing PDF #1 # }}}
 # Resizing PDF #2 # {{{
@@ -158,7 +158,8 @@ if [ "$size_old" -le "$size_new" ]; then
     rm bar.ps
     inputfile="pdfres_out_resized_2.pdf"
     size_new=$(ls -s $inputfile | cut -d ' ' -f 1)
-echo "new size $size_new old size $size_old"
+    size_new_hs=$(ls -hs $inputfile | cut -d ' ' -f 1)
+    echo "new size $size_new old size $size_old"
     if [ "$size_old" -le "$size_new" ]; then
         echo "sorry, couldn't resize $1"
         rm $inputfile
@@ -171,7 +172,7 @@ fi
 
 mv "$inputfile" "$1"
 echo ""
-echo "`basename "$1"`... resized from $size_old to $size_new bites!"
+echo "`basename $1`... resized from $size_old to $size_new bites (~ $size_new_hs mb)!"
 
 ### Final Output # }}}
 # Annotations#{{{
