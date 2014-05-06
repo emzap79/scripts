@@ -13,9 +13,9 @@ fi
 # Configuration # }}}
 # Dialoge # {{{
 
-read -p "do you need your PDF to be scaled to a specific page size? (Y|n) " answer
+read -p "do you need your PDF to be scaled to a specific page size? (y|N) " answer
 case $answer in
-    Yes|yes|Y|y|"")
+    Yes|yes|Y|y)
         PS3="Enter desired pagesize: "
         selOptions=("A3" "A4" "legal")
         select opt in "${selOptions[@]}" "No pagesize: <None>"; do
@@ -42,17 +42,17 @@ case $answer in
             esac; break
         done
         ;;
-    No|no|N|n)
+    No|no|N|n|"")
         fitformat=no
         ;;
 esac
 
-read -p "would you like your output file to be B/W? (Y|n) " answer
+read -p "would you like your output file to be B/W? (y|N) " answer
 case $answer in
-    Yes|yes|Y|y|"")
+    Yes|yes|Y|y)
         togray=yes
         ;;
-    No|no|N|n)
+    No|no|N|n|"")
         togray=no
         ;;
 esac
@@ -89,8 +89,7 @@ esac
 
 echo ""
 echo "copy $1 to /tmp/$$.pdf"
-cp "$1" /tmp/$$.pdf
-echo "done"
+cp -v "$1" /tmp/$$.pdf
 sleep 1
 
 ### Backup File # }}}
