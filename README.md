@@ -5,7 +5,7 @@ This is my repository of bash-scripts I considered useful on a daily base use.
 Until now my collection contains following scripts:
 
 - pdfresize
-- ~~huge_bash_code~~
+- cmus
 
 nothing more so far ;) I'm keen to make this repo growth in the nearer future.
 Until then, feel free to make whatever you want (see license agreement below!).
@@ -16,6 +16,15 @@ on your own risk... :octocat: Shouldn't do no harm though!
 Clone this repo and drop the scripts in your ~/bin directory. Make them
 executable with `chmod 755 ~/bin/<script>` and send me any type of comments
 and/or issues.
+
+
+## Contributing
+
+1. Fork the repository on Github
+2. Create a named feature branch (like `add_component_x`)
+3. Write your changes
+4. Run the tests, ensuring they all pass (with travis)
+5. Submit a Pull Request using Github
 
 ## License Agreement
 "THE BEER-WARE LICENSE" (Revision 42):
