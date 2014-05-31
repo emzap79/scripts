@@ -1,0 +1,81 @@
+#!/bin/bash -
+
+#===============================================================================
+#
+#          FILE:  createMakefile.sh
+#
+#         USAGE:  ./createMakefile.sh
+#
+#   DESCRIPTION:  Creates Makefile from a template
+#
+#       OPTIONS:  ---
+#  REQUIREMENTS:  ---
+#          BUGS:  ---
+#         NOTES:  ---
+#        AUTHOR: Jonas Petong (),
+#       COMPANY:
+#       CREATED: 08.07.2013 16:23:50 CEST
+#      REVISION:  ---
+#===============================================================================
+
+# Helpful links regarding topic:
+# http://www.linux-fuer-alle.de/doc_show.php?docid=92
+# http://typfreq.blogspot.de/2011/03/my-solution-for-vim-sweave-python.html
+
+set -o nounset                              # Treat unset variables as an error
+
+fln='${filename}'
+read -ep "Tell me the name of your *.rnw file " "answer"
+answer=${answer%%.*}
+
+echo "filename=$answer" > ./Makefile
+
+# http://tex.stackexchange.com/a/39612
+echo "
+
+read:
+	echo \"Sweave ('${fln}', encoding='utf-8')\" | R --slave
+	echo \"Stangle ('${fln}', encoding='utf-8')\" | R --slave
+	pdflatex ${fln}.tex
+	pdflatex ${fln}.tex
+	xdg-open ${fln}.pdf &
+
+bib:
+	echo \"Sweave ('${fln}', encoding='utf-8')\" | R --slave
+	echo \"Stangle ('${fln}', encoding='utf-8')\" | R --slave
+	pdflatex ${fln}.tex; bibtex ${fln}.aux;
+	xdg-open ${fln}.pdf &
+
+all:
+	echo \"Sweave ('${fln}', encoding='utf-8')\" | R --slave
+	echo \"Stangle ('${fln}', encoding='utf-8')\" | R --slave
+	pdflatex ${fln}.tex; bibtex ${fln}.aux;
+	#makeindex -s ${fln}.ist -t ${fln}.glg -o ${fln}.gls ${fln}.glo; # Glossar
+	#makeindex A.idx;
+	#makeindex B.idx;
+	#makeindex ${fln}.idx; # falls nur ein Index existiert
+	pdflatex ${fln}.tex; pdflatex ${fln}.tex;
+	xdg-open ${fln}.pdf &
+
+loop:
+	echo \"Sweave ('${fln}', encoding='utf-8')\" | R --slave
+	echo \"Stangle ('${fln}', encoding='utf-8')\" | R --slave
+	pdflatex -halt-on-error ${fln}.tex && bibtex ${fln}.aux
+	#makeindex -s ${fln}.ist -t ${fln}.glg -o ${fln}.gls ${fln}.glo; # Glossar
+	#makeindex A.idx;
+	#makeindex B.idx;
+	#makeindex ${fln}.idx; # falls nur ein Index existiert
+	pdflatex -halt-on-error ${fln}.tex && pdflatex -halt-on-error ${fln}.tex
+
+images:
+	for datei in \$\$(ls *pnm | cut -d \. -f 1) ; do make \$\$datei.ps ; done
+
+cleanall:
+	rm -f *.aux *.toc *.bbl *.idx *.ilg *.ind *.log *.toc *.blg *.out *.glg *.glo *.gls *.ist *.maf *.mtc* *.gz *.backup *.lot *.lof *.pdf *.fls *.url *.bib *_latexmk *.dvi
+
+clean:
+	rm -f ${fln}.aux ${fln}.toc ${fln}.bbl ${fln}.idx ${fln}.ilg ${fln}.ind ${fln}.log ${fln}.toc ${fln}.blg ${fln}.out ${fln}.glg ${fln}.glo ${fln}.gls ${fln}.ist ${fln}.maf ${fln}.mtc${fln} ${fln}.gz ${fln}.backup ${fln}.lot ${fln}.lof ${fln}.pdf ${fln}.fls ${fln}.url ${fln}.bib ${fln}_latexmk ${fln}.dvi
+" | tee -a ./Makefile
+
+# Create subfolders for latex files
+mkdir -p ./sections/{bib,cont,fig,img}
