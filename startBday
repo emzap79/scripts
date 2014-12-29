@@ -1,0 +1,4 @@
+#!/bin/bash
+OUTPUT=$(/usr/bin/birthday)
+/usr/bin/notify-send -t 0 "Geburtstage" "$OUTPUT"
+#/usr/bin/notify-send "Geburtstage" "$OUTPUT" #Lässt die Erinnerung automatisch verschwinden

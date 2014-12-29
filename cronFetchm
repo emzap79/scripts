@@ -1,0 +1,15 @@
+#!/bin/bash
+chkfetchm=$(top -n1 | grep -i fetchmail | wc -l)
+if [[ "$chkfetchm" -gt 0 ]]; then
+	echo "eine Instanz von Fetchmail läuft bereits!"
+	exit 0
+fi
+
+# echo `date +%F-%T` >> $HOME/.logfiles/fetchmail.log
+if [[ "$1" == "all" ]]; then
+    fmrc="$HOME/.fetchmailrc.all.rc"
+else
+    fmrc="$HOME/.fetchmailrc"
+fi
+# fetchmail -f "$fmrc" -v --ssl -L "$HOME/.logfiles/fetchmail.log"  # fetch all mails
+fetchmail -f "$fmrc" -v --ssl    # fetch all mails

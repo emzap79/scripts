@@ -1,0 +1,114 @@
+#!/bin/bash
+
+#.###########################
+#.###########################
+#.#.TOC
+#.###########################
+#.###########################
+
+#.##.Funktionen.ausführen
+#.###.Automatische.Programmbeschreibung
+#.###.Beschreibung.hinzufügen
+#.##.Konfiguration
+#.###.Bestimmung.des.Programmes
+#.###.Strings
+#.###.EOF
+
+#.###########################
+#.##.Funktionen.ausführen
+#.###########################
+
+chk_if_exist ()
+{
+    #.#############
+    #.###.Beschreibung.hinzufügen
+    #.#############
+    #Checkt ob Programmname bereits in logfile vorhanden
+    if [ $chkString != 0 ];then
+        echo -e "\nAbbruch!\n\nDieses Programm befindet sich bereits in deiner Software-Liste\nund wird deshalb nicht hinzugefügt!"
+        exit 1
+    fi
+
+    #Software mit Programmbeschreibung hinzufügen
+    echo "$string1 #$string2" | tee -a $logf
+}
+
+add_descr ()
+{
+
+    #.#############
+    #.###.Automatische.Programmbeschreibung
+    #.#############
+    if [[ -z $descr ]] || [[ "${descr#* - }" = "^GNU*"  ]]; then
+        read -p "Gib eine Programmbeschreibung ein: " string2
+    else
+		string2=$(apt-cache show "$string1"|grep -i description -A3|sed '/^\(--\|Description\|Bugs\|Origin\|$\)/d' | tr -d '\n')
+		# string2=${descr#* - }
+    fi
+
+}
+
+
+add_dotfile ()
+{
+    #Dotfile hinzufügen
+    read -p "Willst du eine Dotfile (.config etc.) hinzufügen (Y|n)? " answer
+    case "$answer" in
+        Yes|yes|Y|y|"")
+            read -p "Dotordner: " string3
+            #echo $string3 | 's/^[^.]/\./g' | tee -a $logf
+            configfile=".${string3##*.}"
+            echo "$configfile" >> $logf
+            #echo "$configfile" | tee -a $logf
+            echo "Programm und Dotfile erfolgreich hinzugefügt!"
+            ;;
+        No|no|N|n|*)
+            echo "Programm erfolgreich hinzugefügt!"
+            ;;
+    esac
+}
+
+inst_progr ()
+{
+    #Programm installieren
+    read -p "$string1 installieren? (Y|n) " answer
+    case "$answer" in
+        Yes|yes|Y|y|"")
+            yes y | sudo apt-get install "$string1"
+            echo 'Programm installiert!'
+            ;;
+        No|no|N|n)
+            echo 'Ciao Bello!'
+            ;;
+    esac
+}
+
+#.###########################
+#.##.Konfiguration
+#.###########################
+descr=$(apt-cache search "$1" | awk 'FNR == 1{print}')
+logf="$HOME/.logfiles/upgSoftw.list"
+
+#.#############
+#.###.Bestimmung.des.Programmes
+#.#############
+if [ -z $1  ]; then
+    read -p "Gib das zu installierende Programm ein: " string1
+    chkString=`cat $logf | grep "$string1 " | wc -l`
+else
+    string1="$1"
+    chkString=`cat $logf | grep "$string1 " | wc -l`
+fi
+
+#.#############
+#.###.Strings
+#.#############
+chk_if_exist
+add_descr
+add_dotfile
+inst_progr
+
+#.#############
+#.###.EOF
+#.#############
+exit 0

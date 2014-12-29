@@ -1,0 +1,21 @@
+#!/bin/bash
+
+######################################################
+########### Konfiguration ############################
+######################################################
+LOG="$HOME/.logfiles"
+if [ ! -e $LOG ]; then mkdir -p $LOG; fi
+chkRecoll=`top -n 1 | grep recollindex | wc -l`
+dateFile="$LOG/`date +%Y%m%d`.recoll"
+######################################################
+######################################################
+
+if [ ! -f $dateFile ];then
+    if [ $chkRecoll = 0 ];then
+        /bin/rm -f $LOG/*.recoll
+        /usr/bin/touch $dateFile
+        recollindex
+    fi
+fi
+
+exit 0

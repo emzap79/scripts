@@ -1,0 +1,14 @@
+#!/bin/bash
+file="$HOME/.cmus/pluglist" 
+chkPlug=$(cat "$file" | grep cmus_add_similar) 
+chkRow=$(sed '/#/,/add_similar/!d' "$file" | wc -l)
+
+# On-Off-CmusAddSimilar
+if [[ "$chkPlug" =~ ^# ]]; then
+    sed -i ''$chkRow' s/^#\ \(.*\)$/\1/g' "$file"
+    cmus-remote -C "set status_display_program=$file"
+    cmus-remote -C 'echo LastFm-EnQ-Plugin *on*'
+else
+    sed -i ''$chkRow' s/\(.*\)$/\#\ \1/g' "$file"
+    cmus-remote -C 'echo LastFm-EnQ-Plugin *off*'
+fi

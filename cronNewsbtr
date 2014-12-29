@@ -1,0 +1,38 @@
+#!/bin/bash
+
+### Konfiguration
+chkNewsb=`ps -aef | grep -v grep | grep \/usr\/bin\/newsbeuter | wc -l`
+chkPower=$(acpi -a | awk '{print $3}' | cut -d '-' -f 1)
+
+testnbtr()
+{
+if [[ $chkNewsb != 0 ]]; then exit 1; fi
+if [[ $chkPower != "on" ]]; then exit 1; fi
+}
+
+#check if the user has an active internet connection
+chkConnect () {
+    sleep 2
+	testconnection=`wget --tries=3 --timeout=15 www.google.com -O /tmp/.testinternet &>/dev/null 2>&1`
+	if [[ $? != 0 ]]; then
+    	exec 3> >(zenity --notification --listen)
+    	echo "message:You are not connected to the Internet. Please check your Internet connection and try again." >&3
+    		exit 0
+	else
+		echo Internet connection - ok
+		rm /tmp/.testinternet  > /dev/null 2>&1
+	fi
+}
+
+
+run_newsbeuter() {
+    # /usr/bin/newsbeuter -x reload >> /dev/null 2>&1
+    /usr/bin/newsbeuter -x reload
+}
+
+# ###########################
+# ## Skript
+# ###########################
+chkConnect
+testnbtr
+run_newsbeuter

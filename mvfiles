@@ -1,0 +1,173 @@
+#!/bin/bash
+
+DIR=/media/zapata/Volume/Musik
+MUSFILE=$HOME/.logfiles/bands.list
+FBN=`basename "$1" .mp3`
+NAME=${1%%.*}
+EXT=${1##*.}
+if [ $(dpkg-query --show | grep "id3v2" | wc -l) = 0 ]; then yes y | sudo apt-get install id3v2; fi
+if [ $(dpkg-query --show | grep "lltag" | wc -l) = 0 ]; then yes y | sudo apt-get install lltag; fi
+if [ $(dpkg-query --show | grep "pacpl" | wc -l) = 0 ]; then yes y | sudo apt-get install pacpl; fi
+
+################################################################################################
+################### MP3-Version 2 ##############################################################
+################################################################################################
+mvyearv2=`id3v2 -l "$1" | grep TYER | cut -d ':' -f 2 | awk 'FNR == 1{print}' | sed '/^ /s/^ *//;s/ /\./g;s/[\/<>:"?*|]/_/g'`
+mvartistv2=`id3v2 -l "$1" | grep TPE1 | cut -d ':' -f 2 | awk 'FNR == 1{print}' | sed '/^ /s/^ *//;s/[\/<>:"?*|]/_/g;s/ /\./g;s/\(\<.\)/\U\1/g' | awk 'FNR == 1 {print}'`
+mvtrackv2=`id3v2 -l "$1" | grep TRCK | cut -d ':' -f 2 | awk 'FNR == 1{print}' | sed '/^ /s/^ *//;s/ /\./g;s/^\([0-9]\)$/0\1/g;s/[\/<>:"?*|]/_/g'`
+mvtitlev2=`id3v2 -l "$1" | grep TIT2 | cut -d ':' -f 2 | awk 'FNR == 1{print}' | sed '/^ /s/^ *//;s/ /\./g;s/[\/<>:"?*|]/_/g;s/\ \(\<.\)/\U\1/g'`
+mvalbumv2=`id3v2 -l "$1" | grep TALB | cut -d ':' -f 2 | awk 'FNR == 1{print}' | sed '/^ /s/^ *//;s/ /\./g;s/[\/<>:"?*|]\./_/g;s/\ \(\<.\)/\U\1/g'`
+mvalbartistv2=`id3v2 -l "$1" | grep TPE2 | cut -d ':' -f 2 | awk 'FNR == 1{print}' | sed '/^ /s/^ *//;s/ /\./g;s/[\/<>:"?*|]/_/g;s/[ (][Ff]eat[\. ]*.*$//;s/[ (][Ff]t[\. ]*.*$//;s/ [Vv]s\.*.*$//;s/\(\<.\)/\U\1/g'`
+
+################################################################################################
+################### MP3-Version 1 ##############################################################
+################################################################################################
+mvyear=`lltag -S "$1" | grep -i date\= | cut -d '=' -f 2 | awk 'FNR == 1{print}' | sed '/^ /s/^ *//;s/ /\./g;s/[\/<>:"?*|]/_/g'`
+mvartist=`lltag -S "$1" | grep -i artist\= | cut -d '=' -f 2 | awk 'FNR == 1{print}' | sed '/^ /s/^ *//;s/[\/<>:"?*|]/_/g;s/ /\./g;s/\(\<.\)/\U\1/g' | awk 'FNR == 1 {print}'`
+mvtrack=`lltag -S "$1" | grep -i number\= | cut -d '=' -f 2 | awk 'FNR == 1{print}' | sed '/^ /s/^ *//;s/ /\./g;s/^\([0-9]\)$/0\1/g;s/[\/<>:"?*|]/_/g'`
+mvtitle=`lltag -S "$1" | grep -i title\= | cut -d '=' -f 2 | awk 'FNR == 1{print}' | sed '/^ /s/^ *//;s/ /\./g;s/[\/<>:"?*|]/_/g;s/\ \(\<.\)/\U\1/g'`
+mvalbum=`lltag -S "$1" | grep -i album\= | cut -d '=' -f 2 | awk 'FNR == 1{print}' | sed '/^ /s/^ *//;s/ /\./g;s/[\/<>:"?*|]\./_/g;s/\ \(\<.\)/\U\1/g'`
+mvalbartist=`lltag -S "$1" | grep -i albumartist\= | cut -d '=' -f 2 | awk 'FNR == 1{print}' | sed '/^ /s/^ *//;s/ /\./g;s/[\/<>:"?*|]/_/g;s/[ (][Ff]eat[\. ]*.*$//;s/[ (][Ff]t[\. ]*.*$//;s/ [Vv]s\.*.*$//;s/\(\<.\)/\U\1/g'`
+
+################################################################################################
+################### Konfiguration ##############################################################
+################################################################################################
+
+IDv1=`id3v2 -l "$1" | grep -i Title | cut -d ':' -f 2 | sed 's/^ *//g;s/ *Artist.*//g' | awk 'FNR == 1 {print}' | wc -l`
+IDv1artist=`id3v2 -l "$1" | grep -i Artist | cut -d ':' -f 2 | awk 'FNR == 1 {print}' | wc -l`
+IDv2=`id3v2 -l "$1" | grep TIT2 | cut -d ':' -f 2 | awk 'FNR == 1{print}' | wc -l`
+IDv2alb=`id3v2 -l "$1" | grep TALB | cut -d ':' -f 2 | wc -l`
+IDv2trck=`id3v2 -l "$1" | grep TRCK | cut -d ':' -f 2 | wc -l`
+IDv2vart=`id3v2 -l "$1" | grep TPE2 | cut -d ':' -f 2 | wc -l`
+IDv2artist=`id3v2 -l "$1" | grep TPE1 | cut -d ':' -f 2 | awk 'FNR == 1{print}' | wc -l`
+IDvOGG=`lltag -S "$1" | grep -i title\= | cut -d '=' -f 2 | wc -l`
+IDvOGGalb=`lltag -S "$1" | grep -i album\= | cut -d '=' -f 2 | awk 'FNR == 1 {print}' |  wc -l`
+IDvOGGtrck=`lltag -S "$1" | grep -i number\= | cut -d '=' -f 2 | wc -l`
+IDvOGGvart=`lltag -S "$1" | grep -i albumartist\= | cut -d '=' -f 2 | wc -l`
+IDvOGGartist=`lltag -S "$1" | grep -i artist\= | cut -d '=' -f 2 | awk 'FNR == 1 {print}' |  wc -l`
+
+DEST=$DIR/$mvalbartistv2/$mvalbumv2
+DESTvar=$DIR/Various\.Artists
+DESTogg=$DIR/$mvalbartist/$mvalbum
+
+################### Formate Konvertieren #######################################################
+################################################################################################
+case $EXT in
+    txt|jpg|jpeg|gif|png)
+        ;;
+    wav)
+        pacpl --quiet --normalize --to mp3 "$1"
+        trash $1
+        ;;
+    wma|acc|m4a|wmv)
+        pacpl --quiet --to mp3 "$1"
+        trash $1
+        ;;
+esac
+
+################### Dateien verschieben ########################################################
+################################################################################################
+case $EXT in
+    ogg)
+        if [ $IDvOGG = 1 ]; then #überprüft, ob Titel vorhanden!
+            case $mvartistOGG in
+                *Various\.Artists*)
+                    mkdir -p $DESTvar/$mvalbumOGG
+                    rsync -rvu "$1" $DESTvar/$mvalbumOGG/$mvartistOGG\.\-\.$mvtitleOGG\.$EXT
+                    ;;
+                *)
+                    if [ $IDvOGGartist = 1 ];then
+                        if [ $IDvOGGalb = 1 ];then
+                            if [ $IDvOGGvart = 1 ];then #überprüft, ob Albumartist vorhanden
+                                if [ $IDvOGGtrck = 1 ];then
+                                    mkdir -p $DESTogg
+                                    rsync -rvu "$1" $DESTogg/$mvartist\.\-\.$mvtrack\.\-\.$mvtitle\.$EXT
+                                else
+                                    mkdir -p $DESTogg
+                                    rsync -rvu "$1" $DESTogg/$mvartist\.\-\.$mvtitle\.$EXT
+                                fi
+                            else
+                                mkdir -p $DESTvar/$mvalbum
+                                rsync -rvu "$1" $DESTvar/$mvalbum/$mvartist.\-\.$mvtitle\.$EXT
+                            fi
+                        else
+                            if [ $IDvOGGalb = 1 ];then
+                                mkdir -p $DIR/$mvalbartist/Non\-Album
+                                rsync -rvu "$1" $DIR/$mvalbartist/Non\-Album/$mvartist\.\-\.$mvtitle\.$EXT  #wenn kein Album vorhanden!
+                            else
+                                mkdir -p $DIR/$mvartist/Non\-Album
+                                rsync -rvu "$1" $DIR/$mvartist/Non\-Album/$mvartist\.\-\.$mvtitle\.$EXT  #wenn kein Album vorhanden!
+                            fi
+                        fi
+                    else
+                        beet import -sq "$1"
+                        /usr/bin/trash "$1"
+                        echo `basename "$1"`\.\.\.\ gelöscht\!
+                    fi
+                    ;;
+            esac
+        else
+            echo `basename $1`\ \.\.\.übersprungen\!
+            echo
+            echo no\ Ogg\ Tags\:\ `ls $1` >> ./NoTags.log
+        fi
+        ;;
+    mp3)
+        if [ $IDv1 = 1 -o $IDv2 = 1 ];then
+            case $IDv2 in
+                0)
+                    if [ $IDv1artist = 1 ];then
+                    mkdir -p $DIR/Various\.Artists/$mvalbum
+                    rsync -rvu "$1" $DIR/Various\.Artists/$mvalbum/$mvartist\.\-\.$mvtitle\.$EXT
+                    echo keine\ IDv2\ Tags\:\ $1 > ./NoTags.log
+                else
+                    beet import -sq "$1"
+                    /usr/bin/trash "$1"
+                    echo `basename "$1"`\.\.\.\ gelöscht\!
+                fi
+                    ;;
+                1)
+                    case $mvalbartistv2 in
+                        *Various\.Artists*)
+                            mkdir -p $DIR/Various\.Artists/$mvalbumv2
+                            rsync -rvu "$1" $DIR/Various\.Artists/$mvalbum/$mvartistv2\.\-\.$mvtitlev2\.$EXT
+                            ;;
+                        *)
+                            if [ $IDv2artist = 1 ];then
+                                if [ $IDv2alb = 1 ];then
+                                    if [ $IDv2vart = 1 ]; then
+                                        if [ $IDv2trck = 1 ]; then
+                                            mkdir -p $DEST
+                                            rsync -rvu "$1" $DEST/$mvartistv2\.\-\.$mvtrackv2\.\-\.$mvtitlev2\.$EXT
+                                        else
+                                            mkdir -p $DEST
+                                            rsync -rvu "$1" $DEST/$mvartistv2\.\-\.$mvtitlev2\.$EXT
+                                        fi
+                                    else
+                                        mkdir -p $DIR/$mvartistv2/$mvalbumv2
+                                        rsync -rvu "$1" $DIR/$mvartistv2/$mvalbumv2/$mvartistv2\.\-\.$mvtrackv2\.\-\.$mvtitlev2\.$EXT
+                                    fi
+                                else
+                                    if [ $IDv2vart = 1 ]; then
+                                        mkdir -p $DIR/$mvalbartistv2/Non\-Album
+                                        rsync -rvu "$1" $DIR/$mvalbartistv2/Non\-Album/$mvartistv2\.-\.$mvtitlev2\.$EXT #falls kein Album und kein Albuminterpret vorhanden ist.
+                                    else
+                                        mkdir -p $DIR/$mvartistv2/Non\-Album
+                                        rsync -rvu "$1" $DIR/$mvartistv2/Non\-Album/$mvartistv2\.-\.$mvtitlev2\.$EXT #falls kein Album vorhanden ist.
+                                    fi
+                                fi
+                            else
+                                beet import -sq "$1"
+                                trash "$1"
+                                echo `basename "$1"`\.\.\.\ gelöscht\!
+                            fi
+                            ;;
+                    esac
+            esac
+        else
+            echo
+            echo `basename $1`\ \.\.\.übersprungen\!
+            echo
+            echo no\ Tags\:\ `ls $1` >> ./NoTags.log
+        fi
+esac

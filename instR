@@ -1,0 +1,27 @@
+#!/bin/bash
+
+#.################
+#.#.Check.for.Root
+#.################
+if [[ `id -u` -ne 0 ]]; then
+    echo ""
+    echo "hi `id -un`!"
+    echo "please reenter as root"
+    echo ""
+    exit 1
+fi
+
+### R installieren ############################
+###############################################
+# http://stackoverflow.com/a/20924082/3569509
+yes y | sudo apt-get update
+yes y | apt-get install "r-base" "gedit-r-plugin" "r-recommended" "r-cran-rcmdr" "r-cran-gplots" "r-cran-ggplot2"
+yes y | apt-get install libc6-dev gfortran liblapack-dev libcurl4-gnutls-dev libcurl4-openssl-dev
+yes y | apt-get install libxml2-dev     # XML
+
+
+# echo "
+# ### Automatisches Öffnen des R-Commanders ###
+# local({
+# old <- getOption("defaultPackages")
+# options(defaultPackages = c(old, "Rcmdr"))})" | tee -a /etc/R/Rprofile.site

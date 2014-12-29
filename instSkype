@@ -1,0 +1,62 @@
+#!/bin/bash
+chk_if_root() {
+    if [[ `id -u` -ne 0 ]]; then
+        echo ""
+        echo "hi `id -un`!"
+        echo "please reenter as root"
+        echo ""
+        exit 1
+    fi
+}
+chk_if_installed_yet() {
+    if [ -e /usr/bin/skype-launcher ];then
+        exit 1
+        instProgr=`dpkg-query --show | grep skype | wc -l`
+        if [ $instProg != 0 ];then
+            exit 1
+        fi
+    fi
+}
+inst_dependencies() {
+    yes y | apt-get purge skype-bin
+    yes y | apt-get install libqt4-dbus
+    yes y | apt-get install libqt4-network
+    yes y | apt-get install libqt4-xml
+    yes y | apt-get install libasound2
+}
+inst_skype() {
+    sudo -u $USER wget -O skype.deb http://www.skype.com/go/getskype-linux-beta-ubuntu-64
+    # sudo -u $USER wget -O skype.deb http://download.skype.com/linux/skype-ubuntu-precise_4.2.0.13-1_i386.deb
+    yes y | dpkg -i --auto-deconfigure skype.deb
+}
+flip_camera_vertically() {
+    echo "LD_PRELOAD=/usr/lib/i386-linux-gnu/libv4l/v4l1compat.so skype" | tee /usr/bin/skype-launcher
+    sudo -u $USER chmod 755 /usr/bin/skype-launcher
+    sed -i '/^Exec/ s/skype/\/usr\/bin\/skype-launcher/g' /usr/share/applications/skype.desktop
+    apt-get -f install
+    rm -f skype.deb
+}
+fix_sound_issues() {
+    # http://linuxundich.de/software/skype-auf-64-bit-ubuntus-und-anderen-linuxen-theme-optimieren-und-knacksers-aus-dem-sound-verbannen/
+    sed -i 's/^load-module module-udev-detect$/# &\r& use_ucm=0 tsched=0/g' /etc/pulse/default.pa
+    sed -i 's/^load-module module-detect$/# &\r& tsched=0/g' /etc/pulse/default.pa
+    pulseaudio -k
+}
+fix_video_colors() {
+    yes y | apt-get install guvcview
+    echo "Bitte per Hand gewünschte Farbeinstellungen wählen."
+    sleep 15
+    sudo -u $USER /usr/bin/guvcview
+}
+
+###############
+#  functions  #
+###############
+fix_video_colors
+chk_if_root
+chk_if_installed_yet
+inst_dependencies
+inst_skype
+flip_camera_vertically
+fix_sound_issues
+fix_video_colors

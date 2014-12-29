@@ -36,13 +36,22 @@ bib:
 	xdg-open ${fln}.pdf &
 
 all:
-	pdflatex ${fln}.tex; bibtex ${fln}.aux;
+	pdflatex ${fln}.tex && bibtex ${fln}.aux;
 	#makeindex -s ${fln}.ist -t ${fln}.glg -o ${fln}.gls ${fln}.glo; # Glossar
 	#makeindex A.idx;
 	#makeindex B.idx;
 	#makeindex ${fln}.idx; # falls nur ein Index existiert
 	pdflatex ${fln}.tex; pdflatex ${fln}.tex;
 	xdg-open ${fln}.pdf &
+
+loop:
+	pdflatex -halt-on-error ${fln}.tex
+	#bibtex ${fln}.aux
+	#makeindex -s ${fln}.ist -t ${fln}.glg -o ${fln}.gls ${fln}.glo; # Glossar
+	#makeindex A.idx;
+	#makeindex B.idx;
+	#makeindex ${fln}.idx; # falls nur ein Index existiert
+	pdflatex -halt-on-error ${fln}.tex && pdflatex -halt-on-error ${fln}.tex
 
 images:
 	for datei in \$\$(ls *pnm | cut -d \. -f 1) ; do make \$\$datei.ps ; done

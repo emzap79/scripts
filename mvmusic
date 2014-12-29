@@ -1,0 +1,6 @@
+#!/bin/bash
+
+/bin/bash $HOME/bin/musicTagVarious.sh
+/bin/bash $HOME/bin/musicTagCpArtist.sh
+/bin/bash $HOME/bin/musicMvFiles.sh
+

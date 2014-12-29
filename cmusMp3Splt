@@ -1,0 +1,40 @@
+#!/bin/bash
+dir="$HOME/.cmus/tracks"
+file="$(cmus-remote -Q | grep file | sed 's/^file //g')"
+
+pos=$(cmus-remote -Q | grep position | awk '{print $2}')
+dur=$(cmus-remote -Q | grep duration | awk '{print $2}')
+
+minPos=$(($pos / 60 ))
+secPos=$(($pos / 360))
+minDur=$(($dur / 60 ))
+secDur=$(($dur / 360))
+
+if [ -f "$file" ];
+then
+    #Ab aktueller Position beschneiden
+    /usr/bin/mp3splt -d "$dir" "$file" "$minPos.$secPos" "$minDur.$secDur" 
+    foo=$(ls -Altc "$dir/" | awk 'FNR == 2{print}' | cut -d " " -f "9-99")
+
+    #Neuen Track an Splitpoints trimmen
+    /usr/bin/mp3splt -r "$dir/$foo"
+    bar=$(ls "$dir" | grep trimmed)
+    foo=$(ls -Altc "$dir/" | awk 'FNR == 2{print}' | cut -d " " -f "9-99")
+    /bin/mv "$dir/$bar" "$dir/$foo"
+
+	# Track mit Silence-Detection Trimmen
+	mp3splt -s -p th=-40,min=0,rm "$dir/$foo"
+	# min=FLOAT Positive float of the minimum number of seconds to be considered a
+	# valid splitpoint. All silences shorter than min are discarded. Default is 0.
+
+    if [ "$dur" -lt 300 ]; 
+    then
+        #Alte Datei ersetzen
+        /usr/bin/trash "$file"
+        cp "$dir/$foo" "$file"
+    fi
+    cmus-remote -C "echo Splitfile gespeichert in $dir/$foo"
+
+else
+    echo "Oop, couldn't find selected track" >&2
+fi

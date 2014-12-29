@@ -1,0 +1,17 @@
+#!/bin/bash
+
+if ! cmus-remote -C >/dev/null 2>&1 ; then
+    echo >&2 "cmus is not running"
+    exit 1
+fi
+
+cmus-remote -C "echo selected track"
+cmus-remote -C "save -p -" > /tmp/foobar.pl     # save playlist
+cmus-remote -c                                  # clear current playlist
+cmus-remote -C "win-add-p"                      # add new tracks
+cmus-remote -C "add -p /tmp/foobar.pl"          # append old playlist
+
+# This is taken from cmusRandQ
+# bin/bash
+#q=$(cmus-remote -C "save -q -" | sort -R | sed "s/^/add -q /")
+#(echo "clear -q" ; echo "$q" ) | cmus-remote

@@ -1,0 +1,15 @@
+#!/bin/bash
+file="$(pwd)/report.txt"
+done=0
+while [ "x${done}" = x0 ]; 
+do
+    echo -n "Gib den Befehl ein [ENTER for exiting script]: "
+    read answer
+    if [ "x${answer}" != x ]; then
+        echo -e "#$answer\n`$answer`\n\n" | tee -a $file
+        done=0
+    else
+        done=1
+        echo "gespeichert in $file"
+    fi
+done

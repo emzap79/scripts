@@ -1,0 +1,19 @@
+#!/bin/bash
+#
+###############################################
+################ Konfiguration ################
+###############################################
+LOG="$HOME/.logfiles"
+chkSet=`gsettings get org.gnome.desktop.lockdown disable-lock-screen`
+if [ ! -e $LOG ]; then mkdir -p $LOG; fi
+export DISPLAY=:0  #Damit Notify-Send auch in Cron-gesteuerten Skripten arbeitet
+
+###############################################
+###### Überprüfen, ob bereits ausgeführt ######
+###############################################
+if [ -e $LOG/*`date +-%W`.date ];then 
+    exit 1;
+else
+    caffeine -a;
+fi
+exit 0

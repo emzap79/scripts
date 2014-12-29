@@ -1,0 +1,17 @@
+#!/bin/bash
+
+dirPod=$HOME/Downloads/Podcasts
+
+#Removing empty dirs and mediaartlocals
+find Downloads/Podcasts/ -type f -regextype egrep -iregex '.*(jpg|jpeg)'\
+    -exec rm -v {} \;
+find "$dirPod" -depth -type d -empty -exec rmdir -- {} \;
+
+#Copying Podcasts-Playlist to Cmus-Dir
+for f in $(find $dirPod -maxdepth 2 -mindepth 2 -type d);
+do
+    nmShow=$(echo "$f" | sed 's/.*\/\([^/]*\)$/\1/g')
+    nmGenre=$(echo "$f" | sed 's/.*\/\([^/]*\)\/[^/]*$/\1/g')
+    nmDate=$(ls -ltr --time-style=long-iso $f/* | awk '{print $6}' | tail -n1)
+    ls $f/* | tee $HOME/.cmus/plPod_"$nmGenre"_"$nmDate"_"$nmShow".pl
+done

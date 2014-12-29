@@ -1,0 +1,6 @@
+#!/bin/bash
+#find . -type f -exec id3v2 -r TPE2 {} \;
+find . -type f -exec tagvarious {} \;
+#find . -type f -exec cpartist {} \;
+#find . -type f -exec mvfiles {} \;
+sudo shutdown -h now

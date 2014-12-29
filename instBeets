@@ -1,0 +1,18 @@
+#!/bin/bash
+
+#.################
+#.#.Check.for.Root
+#.################
+if [[ `id -u` -ne 0 ]]; then
+    echo ""
+    echo "hi `id -un`!"
+    echo "please reenter as root"
+    echo ""
+    exit 1
+fi
+
+### Beets installieren ########################
+###############################################
+yes y | apt-get install python-dev python-setuptools python-pip python3-pylast
+yes y | apt-get install beets python-acoustid libchromaprint-tools mp3gain
+yes y | pip install pyechonest pyacoustid pylast

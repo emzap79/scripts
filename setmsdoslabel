@@ -1,0 +1,221 @@
+#!/bin/bash
+#
+###########################################################################
+#
+# Description:
+#      Sets LABEL on MSDOS partition
+#
+# Usage:
+#      sudo $0 PARTITION LABEL
+#
+# Example:
+#      sudo $0 /dev/hda9 MY_LABEL
+#
+# IN:  PARTITION LABEL
+# OUT: LABEL set as label on partition PARTITION
+#
+# RC:
+#      1 - Wrong number of parameters
+#      2 - You forgot sudo.
+#      3 - Partition $1 is not mounted.
+#      4 - Package mtools is not installed.
+#      5 - Could not copy /etc/mtools.conf to ~/.mtoolsrc.
+#      6 - Could not write to ~/.mtoolsrc.
+#      7 - Could not do    mcd x:
+#      8 - Could not set the new label for ${1}.
+#      9 - You don´t want to set label $2 for ${1}, so I´ll exit now.
+#
+###########################################################################
+
+#set -x
+
+#########################
+# functions - start
+#########################
+
+function usage () {
+        echo -e "\nUsage:   sudo $0 PARTITION LABEL"
+        echo -e "Example: sudo $0 /dev/hda9 MY_LABEL\n"
+}
+
+function verify_uid () {
+        if [ "${UID}X" != "0X" ]
+        then
+           echo -e "\nYou forgot sudo."
+           usage
+           exit 2
+        fi
+}
+
+function verify_partition () {
+# It is not necessary to verify the partition type, because
+# mlabel can set label only on MSDOS partitions.
+# But the partition has to be mounted!
+        MOUNTED=$(grep $1 /etc/mtab | wc -l | tr -d ' ')
+        if [ "${MOUNTED}X" != "1X" ]
+        then
+           echo -e "\nPartition $1 is not mounted."
+           echo -e "You should mount this partition before you run this script.\n"
+           exit 3
+        fi
+}
+
+function verify_mtools () {
+        MTOOLS=$(which mtools)
+        if [ "${MTOOLS}X" = "X" ]
+        then
+           echo -e "\nPackage mtools is not installed."
+           echo -e "You should run \"sudo apt-get install mtools\" or \"sudo aptitude install mtools\"!\n"
+           exit 4
+        fi
+}
+
+function save_mtoolsrc (){
+# save a copy of your own ~/.mtoolsrc
+        if [ -f  ~/.mtoolsrc ]
+        then
+           cp ~/.mtoolsrc ~/.mtoolsrc.sav
+           echo -e "\n~/.mtoolsrc saved to ~/.mtoolsrc.sav"
+        fi
+}
+
+function recover_mtoolsrc (){
+# recover your own ~/.mtoolsrc
+        if [ -f  ~/.mtoolsrc.sav ]
+        then
+           mv ~/.mtoolsrc.sav ~/.mtoolsrc
+
+           # files owned by root in user´s home directory
+           # it´s not nice, so reset the ownership
+           chown ${SUDO_USER} ~/.mtoolsrc ~/.mcwd
+
+           echo -e "\n~/.mtoolsrc recovered"
+        fi
+
+}
+
+
+function copy_mtools.conf_to_mtoolsrc (){
+# if copy does not work, mtools does not seem installed
+        cp /etc/mtools.conf ~/.mtoolsrc
+        if [ $? -ne 0 ]
+        then
+           recover_mtoolsrc
+           echo -e "\nCould not copy /etc/mtools.conf to ~/.mtoolsrc.\n"
+           exit 5
+        fi
+}
+
+
+function rename_temp_mtoolsrc_and_recover_mtoolsrc (){
+# copy your temporary ~/.mtoolsrc to ~/.mtoolsrc.error
+        RECOVERED=0
+
+        if [ -f  ~/.mtoolsrc ]
+        then
+           mv ~/.mtoolsrc ~/.mtoolsrc.error
+           RECOVERED=1
+        fi
+
+        recover_mtoolsrc
+
+        if [ "${RECOVERED}X" = "1X" ]
+        then
+           echo -e "\nThere is a file ~/.mtoolsrc.error"
+           echo -e "~/.mtoolsrc.error was written by me."
+           echo -e "Please check this file to figure out what happened.\n"
+           exit $1
+        fi
+}
+
+
+function write_new_mtoolsrc (){
+# there is a copy of your original ~/.mtoolsrc
+# we are going to recover this file
+# we have to be sure, that there are no other settings in this file
+# so we overwrite this file temporarily and recover it thereafter
+        echo "drive x: file=\"${1}\"" > ~/.mtoolsrc
+        echo mtools_skip_check=1 >> ~/.mtoolsrc
+           if [ $? -ne 0 ]
+           then
+              echo -e "\nCould not write to ~/.mtoolsrc."
+              rename_temp_mtoolsrc_and_recover_mtoolsrc 6
+           fi
+}
+
+
+function set_label_on_partition () {
+        # does the new ~/.mtoolsrc work?
+        mcd x:
+        if [ $? -ne 0 ]
+        then
+           echo -e "\nCould not do    mcd x:"
+           echo "Check STDOUT and ~/.mtoolsrc*"
+           rename_temp_mtoolsrc_and_recover_mtoolsrc 7
+        fi
+
+        # Are you sure you want to change the lable?
+        echo -e "\nCurrent label for ${1}: $(mlabel -s x:)"
+        read -p "Do you really want to set $2 as label for ${1}? (y/n):"
+
+        case "$REPLY" in
+        y|yes|Y|Yes|YES|j|ja|J|Ja|JA)
+           # try to set the new label
+           mlabel x:$2
+           RC=$?
+           if [ $? -eq 0 ]
+           then
+              echo -e "\nNew label on ${1}: $(mlabel -s x:)"
+              # everything is OK, so we should only remove the temporary ~/.mtoolsrc and recover the original ~/.mtoolsrc
+              recover_mtoolsrc
+           else
+              echo -e "\nCould not set the new label for ${1}."
+              # something went wrong, so we should save the temporary ~/.mtoolsrc and recover the original ~/.mtoolsrc
+              rename_temp_mtoolsrc_and_recover_mtoolsrc 8
+           fi
+           ;;
+        *)
+           echo -e "\nYou don´t want to set label $2 for ${1}, so I´ll exit now."
+           recover_mtoolsrc
+           echo ""
+           exit 9
+           ;;
+        esac
+}
+#########################
+# functions - start
+#########################
+
+
+
+
+#########################
+# main - start
+#########################
+
+if [ $# -ne 2 ]
+then
+   echo -e "\nWrong number of parameters."
+   usage
+   exit 1
+fi
+
+verify_uid
+
+verify_partition $1
+
+verify_mtools
+
+save_mtoolsrc
+
+copy_mtools.conf_to_mtoolsrc
+
+write_new_mtoolsrc $1
+
+set_label_on_partition $1 $2
+
+exit 0
+
+#########################
+# main - end
+#########################

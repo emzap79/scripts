@@ -1,0 +1,3 @@
+#!/bin/bash
+
+(for x in "$@" ; do echo "add -q $x" ; done | sort -R | cmus-remote) &

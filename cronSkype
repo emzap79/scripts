@@ -1,0 +1,26 @@
+#!/bin/bash
+n=$RANDOM                   # Random integer
+sleeptime=$(( n %= 55 ))    # Random sleep time below 55 min
+lockfile="/tmp/skype.lock"
+
+chkskype=$(top | grep -i skype)
+if [[ -n $chkskype ]];
+then
+    if [[ ! -f $lockfile ]];
+    then
+        touch $lockfile
+        yad --center --on-top --timeout=20 --title ":: Starting Skype ::" --text "starting skype in $sleeptime minutes"
+        if [[ $? = 0 ]]; then
+            sleep "$sleeptime"m
+            /usr/bin/skype-launcher &
+            #/usr/bin/skype-launcher --display=:1.0 >> /dev/null 2>1
+            sleep 5
+        else
+            echo "Startprozess unterbrochen"
+        fi
+    else
+        echo "Skript heute bereits ausgeführt"
+    fi
+else
+    echo "Eine Instanz von Skype läuft bereits"
+fi

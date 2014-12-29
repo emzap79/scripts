@@ -1,0 +1,59 @@
+#!/bin/sh
+# ###########################
+# http://www.wizards-toolkit.org/discourse-server/viewtopic.php?f=1&t=16249
+# res="100x100^^"   # orig script
+# crop="100x100+0+0"  # orig script
+# geom="32x32+0+0"   # orig script
+# ###########################
+res="600x600^^"         # Qualität der Bilder
+crop="600x400"          # Schnittbreite und -höhe
+geom="$crop+5+0"        # Breite und Höhe im Resultat
+out="collage.png"       # Name des neuen Bildes
+
+# ###########################
+# Optionen
+# ###########################
+# # convert
+#-crop "$crop" \
+#-resize "$res" \
+
+# # montage
+#-background none \         # none, black, white ...
+#-mode=concatenate \        # Aneinanderreihen
+#-geometry $geom \
+#-tile x1 $out \            # 4x4: 4 reihen, 4 spalten
+#-shadow \                  # Schatteneffekt
+
+# ###########################
+# Skript
+# ###########################
+# # Verzeichnis anlegen
+rm -rv foo
+mkdir ./foo
+cp -v "$@" ./foo/
+cd ./foo
+
+if [ -e "$1" ]; then
+    # # Bilder konvertieren
+    for f in "$*"; do convert $f \
+        -crop "$crop" \
+        -resize "$res" \
+        +repage bar_%03d.png;
+done
+
+# # Collage erstellen
+montage bar_*.png \
+    -background none \
+    -tile x1 \
+    -geometry $geom \
+    -shadow \
+../$out
+
+# # Leave Folder & remove pics
+cd ..
+display $out
+rm -rv foo
+
+else
+    echo "usage: $0 <file1><file2><file3><file...>"
+fi

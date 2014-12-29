@@ -1,0 +1,124 @@
+#!/bin/bash
+
+# ###########################
+# TOC
+# ###########################
+#
+#.Name.der.CD.
+#.mpg123.installieren.
+#.Konfiguration.
+#.Musik.konvertieren
+#.Notiz.ausgeben
+#.Medium.überprüfen.
+#.Diskgröße.überprüfen.
+
+echo -e "
+***** Burn playlists as a Audio disc via Command Line *****"
+echo ""
+################################################
+############.Name.der.CD.#######################
+################################################
+read -p "Wie soll die CD heißen? " cdname
+DIR="/tmp"
+DEST="$DIR/$cdname"
+if [ ! -e $DEST ]; then mkdir -p $DEST; fi
+
+################################################
+############.mpg123.installieren.###############
+################################################
+if [ ! -f `which mpg123` ]; then
+    read -p "*** mpg123 ist nicht installiert... möchtest du es jetzt installieren? *** " antwort
+    case "$antwort" in
+        Yes|yes|Y|y|"") 
+            yes y | sudo apt-get install mpg123
+            ;;
+        *) echo "Abbruch."
+            exit 1
+            ;;
+    esac
+fi
+
+################################################
+###########.Konfiguration.######################
+################################################
+#dirPlayl=`zenity.--title="Select.dirPlayl.Playlist".--file-selection`
+cd $HOME
+while read -ep "Pfadname der Playlist? /home/zapata/" "answer"
+dirPlayl="$HOME/$answer"
+do
+    if [ ! -e "$dirPlayl" ];
+    then
+        echo ''
+        echo 'Playlist existiert nicht!'
+    else
+        break
+    fi
+done
+
+################################################
+############.Musik.konvertieren.################
+################################################
+read -p "Musik wird nun ins WAV-Format geschrieben und anschließend gebrannt [Enter]"
+numb=100
+while read -r i;
+do
+    count=$((numb++))
+    mpg123 --rate 44100 --stereo --buffer 3072 --resync -w "$DEST/$count".wav "$i";
+    #lame --decode "$i" "`basename "$i" .mp3`".wav   #Alternative Konvertiermethode
+done < "$dirPlayl"
+
+
+################################################
+############.Notiz.ausgeben.####################
+################################################
+if [ $? = 0 ]; then
+    echo ""
+    echo "Musik wurde erfolgreich nach"
+    echo ""
+    echo "$(ls $DEST/*)"
+    echo ""
+    echo "... konvertiert."
+    echo ""
+else
+    echo "Bitte erneut versuchen..."
+    exit 1
+fi
+sleep 1
+
+################################################
+############.Medium.überprüfen.#################
+################################################
+file -s /dev/sr0
+while [ $? = 0 ];
+do
+    echo ""
+    echo "CD nicht lesbar"
+    read -p "Neue Disc einlegen [Enter]"
+    sleep 2
+    file -s /dev/sr0
+done
+
+################################################
+############.Diskgröße.überprüfen.##############
+################################################
+chkDiscSize=$(du -d0 "$DEST")
+if [ "$chkDiscSize" -gt 716800 ];
+then
+    echo "Die ausgewählten Tracks passen nicht auf eine CD (max. 700mb)"
+    while [ du -d0 '$DEST' -gt 716800 ];
+    do
+        echo "Bitte wähle (weitere) zu löschende Lieder aus"
+        select FILENAME in "$DEST"/*;
+        do
+            rm -v "$DEST/$FILENAME"
+        done
+    done
+fi
+
+################################################
+############.Brennen.mit.Wodim.#################
+################################################
+/usr/bin/wodim -v -pad speed=2 dev=/dev/cdrw -eject -dao -swab "$DEST"/*.wav
+
+#EOF
+exit 0

@@ -1,0 +1,27 @@
+#!/bin/bash
+
+### Erneutes Generieren eines Passworts ###
+###########################################
+abfrage ()
+{
+    echo ""
+    read -p "Möchtest du dieses Passwort verwenden? (y|N)? " answer
+    case "$answer" in
+        Yes|yes|Y|y)
+            xclip -o | xclip -selection c
+            echo "Passwort im Clipboard gespeichert!"
+            ;;
+        No|no|N|n|"")
+            pssw
+            ;;
+    esac
+}
+
+pssw ()
+{
+    echo -n `< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c8` | xclip     # echo-option (-n) prevents from printing newline
+    xclip -o
+    abfrage
+}
+pssw
+exit 0

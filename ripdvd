@@ -1,0 +1,155 @@
+#!/bin/bash
+### Konfiguration ###
+
+# Root-Rechte 
+echo "Fehlende Softwarepakete werden gesucht."
+echo "Evtl. wirst du nach Root-Rechten gefragt."
+sleep 1
+dvddev="/dev/sr0"
+
+# Benötigte Programme 
+if [ $(dpkg-query --show | grep "mjpegtools" | wc -l) = 0 ];then yes y | sudo apt-get install mjpegtools; fi
+if [ $(dpkg-query --show | grep "lsdvd" | wc -l) = 0 ];then yes y | sudo apt-get install lsdvd; fi
+if [ $(dpkg-query --show | grep "transcode" | wc -l) = 0 ];then yes y | sudo apt-get install transcode; fi
+if [ $(dpkg-query --show | grep "mplayer" | wc -l) = 0 ];then yes y | sudo apt-get install mplayer; fi
+if [ $(dpkg-query --show | grep "mencoder" | wc -l) = 0 ];then yes y | sudo apt-get install mencoder; fi
+if [ $(dpkg-query --show | grep "normalize-audio" | wc -l) = 0 ];then yes y | sudo apt-get install normalize-audio; fi
+if [ $(dpkg-query --show | grep "vorbis-tools" | wc -l) = 0 ];then yes y | sudo apt-get install vorbis-tools; fi
+if [ $(dpkg-query --show | grep "gpac" | wc -l) = 0 ];then yes y | sudo apt-get install gpac; fi
+if [ $(dpkg-query --show | grep "libdvdread4" | wc -l) = 0 ];then yes y | sudo apt-get install libdvdread4; fi
+
+# DVD überprüfen
+if [ $(df | grep "/dev/sr0" | wc -l) = 0 ]; 
+then
+    read -p "Bitte DVD einlegen und mit [Enter] bestätigen! " 
+    sleep 2
+    if [ $(df | grep "/dev/sr0" | wc -l) = 0 ]; then 
+        echo "DVD nicht eingelegt. Skript wird beendet"
+        exit 1
+    fi
+fi
+
+# Titel eingeben
+read -p "Wie lautet der Titel des Films? " dvdtitle
+read -p "Möchtest du das Standardverzeichnis ($HOME/Videos/Movies) verwenden (Y|n)? " answer
+case "$answer" in
+    Yes|yes|Y|y|"") 
+        dvddir=$HOME/Videos/Movies
+        ;;
+    No|no|N|n) 
+        read -ep "Gib das Verzeichnis an in das gerippt werden soll: " dvddir
+        ;;
+esac
+
+# Ermitteln des längsten Track-Titels
+dvdinfo="$dvddir/info.txt"
+longtrack=$(lsdvd | grep Longest | awk '{print $3}')
+echo ""
+echo "Mplayer startet jetzt den längsten ermittelten Track. Überprüfe ob Track $longtrack dem Hauptfilm entspricht, der gerippt werden soll"
+echo ""
+sleep 2
+mplayer dvd://$longtrack -v | tee $dvdinfo
+
+read -p "Bestätige kurz dass dies der korrekte zu rippende DVD-Teil ist (Y|n): " answer
+case "$answer" in
+    Yes|yes|Y|y|"") 
+        dvdtrack=$(lsdvd | grep Longest | awk '{print $3}')
+        ;;
+    No|no|N|n) 
+        echo "Folgende Titel befinden sich auf der DVD: "
+        sleep 1
+        lsdvd
+      
+        read -p "Möchtest du jetzt die manuell ermittelte Track-Nr. eingeben (Y|n)? : " answer
+        case "$answer" in
+            Yes|yes|Y|y|"") 
+                read -p "Die zu rippende DVD Nr. ist: " dvdtrack
+                ;;
+            No|no|N|n) 
+                echo "Das Skript wird jetzt beendet."
+                exit 1
+                ;;
+        esac
+esac
+
+### Auswahlmenu ###
+echo ""
+title="Optionswahl"
+prompt="Wähle eine Option:"
+options=("DVD rippen" "DVD rippen + MPG mit fremdsprachiger Tonspur erstellen")
+
+echo "$title"
+PS3="$prompt "
+select opt in "${options[@]}" "ISO-Abbild erstellen (keine weitere Option)"; do 
+    case "$REPLY" in
+        1 ) option="createdvd"
+            echo "Du hast Option $opt gewählt: $REPLY"
+            ;;
+        2 ) option="creatempg"
+            #Verzeichnis festlegen
+            echo "Du hast Option $opt gewählt: $REPLY"
+            read -p "Soll das oben festgelegte Verzeichnis beibehalten werden (Y|n)? " answer
+            case $answer in
+                Yes|yes|Y|y|"") 
+                    mpgdir=$dvddir
+                    ;;
+                No|no|N|n) 
+                    read -ep "Gib das Verzeichnis der zu erstellenden MPG an: " mpgdir
+                    ;;
+            esac
+
+            #Andere Sprachen
+            echo -e "### Sprachauswahl ###"
+            echo -e "Wähle den gewünschten Sprachcode aus (bspw. 'es' für Spanisch)"
+            echo -e "Verfügbare Sprachen sind:\n$(cat "$dvdinfo" | grep "audio stream" | grep "language:")" 
+            echo -e "#####################"
+            read -p "Sprachkürzel: " dvdlang 
+            dvdlangnr=$(cat $dvdinfo | grep "audio stream" | grep "language: $dvdlang" | awk 'FNR == 1{print}' | awk '{print $3}')
+
+
+            ;;
+        $(( ${#options[@]}+1 )) ) 
+            option="createiso"
+            echo "Du hast Option $opt gewählt: $REPLY"
+            ;;
+        *) echo "Invalid option. Try another one.";continue
+            ;;
+    esac;break
+done
+
+
+### Skript ###
+# Optionen ausführen
+case $option in
+    creatempg|createdvd)
+        # DVD rippen
+        echo "DVD wird nun gerippt nach $dvddir ..."
+        sleep 5
+        mplayer dvd://$dvdtrack -v -dumpstream -dumpfile $dvddir/$dvdtitle.vob
+
+        if [ $option = "creatempg" ]; then
+            # MPG erstellen
+            echo "MPG wird erstellt"
+            tcextract -i $dvddir/$dvdtitle.vob -t vob -x mpeg2 > $dvddir/movie.m2v
+            tcextract -i $dvddir/$dvdtitle.vob -a $dvdlangnr -x ac3 -t vob > $dvddir/movie.ac3 
+            mplex -f 8 -o $mpgdir/$dvdtitle\_$dvdlang.mpg $dvddir/movie.m2v $dvddir/movie.ac3
+            rm -f $dvddir/movie.m2v $dvddir/movie.ac3
+            rm -f $dvdinfo
+            prompt="Du findest die MPG in $mpgdir/$dvdtitle.mpg"
+        else
+            prompt="Du findest die DVD in $dvddir/$dvdtitle.vob"
+        fi
+        ;;
+    createiso)
+        # ISO erstellen
+        echo "Abbild wird erstellt in $dvddir/$dvdtitle.iso"
+        dd if=/dev/sr0 of=$dvddir/$dvdtitle.iso
+        prompt="Du findest das ISO-Abbild in $dvddir/$dvdtitle.iso"
+        ;;
+esac
+eject $dvddev
+sleep 2
+play /usr/share/sounds/gnome/default/alerts/glass.ogg repeat 3
+echo "Herzlichen Glückwunsch, alle Prozesse abgeschlossen!"
+echo $prompt        
+exit 0

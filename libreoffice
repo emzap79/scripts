@@ -1,0 +1,4 @@
+#! /bin/bash
+export LD_LIBRARY_PATH="/usr/lib/ure/lib"
+LO=$(which -a libreoffice | grep -v `pwd` | head -1)
+exec $LO "$@"

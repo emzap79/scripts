@@ -1,0 +1,29 @@
+#! /bin/bash
+#
+# #############
+# ### Konfiguration
+# #############
+descr=$(apt-cache search "$1" | awk 'FNR == 1{print}')
+logFILE="$HOME/.logfiles/github.list"
+strDot=$(echo "$1" | sed 's/^\(.\).*$/\1/g')
+
+
+# #############
+# ### Dotfile hinzufügen
+# #############
+read -p "Willst du eine Dotfile (.config etc.) hinzufügen (Y|n)? " answer
+case "$answer" in
+    Yes|yes|Y|y|"")
+        read -p "Dotordner: " string
+        echo "$string" | sed 's/^\([^\.]\)/\.\1/g' | tee -a $logFILE
+        echo "Dotfile erfolgreich hinzugefügt!"
+        ;;
+    No|no|N|n)
+        echo "Dotfile später hinzufügen!"
+        ;;
+esac
+
+# #############
+# ### EOF
+# #############
+exit 0

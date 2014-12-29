@@ -1,0 +1,20 @@
+#!/bin/bash
+
+#.################
+#.#.Check.for.Root
+#.################
+if [[ `id -u` -ne 0 ]]; then
+    echo ""
+    echo "hi `id -un`!"
+    echo "please reenter as root"
+    echo ""
+    exit 1
+fi
+
+### Wuala installieren ########################
+###############################################
+### Wuala Repository einrichten ###
+cd ~ && sudo -u $USER wget -O wuala https://cdn.wuala.com/repo/deb/wuala_current_amd64.deb
+yes y | dpkg -i wuala
+apt-get -f install
+rm -f wuala

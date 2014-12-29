@@ -1,0 +1,267 @@
+#!/bin/bash
+# vim:fdm=marker
+
+#Damit Notify-Send auch in Cron-gesteuerten Skripten arbeitet
+#export DISPLAY=:0
+
+# Konfiguration {{{1
+
+UNIMAT="$HOME/Unimaterialien"
+USB="/media/zapata/ES02224159"
+LOG="$HOME/.logfiles"
+TMPUNI="$HOME/tmp/uniordner"
+SSH='sdjopeto@student.uni-due.de:public_html'
+SMTR='Winter1415'
+SMTRALT='Sommer2014'
+lockfile="syncssh.lock"
+lockfile_glob="$(ls $LOG | egrep '[[:digit:]]{8}.lock')"
+opt="{ [upd|up|u] | [down|dwn|d] | [usb|cruzer|cruz] }"
+chkSSH=$(lsof -i :ssh | grep 'uni-duisburg-essen.de' | wc -l)
+
+if [ ! -e $TMPUNI ]; then mkdir -p $TMPUNI; fi
+if [ ! -e $LOG ]; then mkdir -p $LOG; fi
+
+
+# Skript Starten {{{1
+
+# Lockfile löschen {{{2
+exit_script () {
+    if [[ -f "$LOG/$lockfile" ]]; then rm -f "$LOG/$lockfile"; fi
+    if [[ -f "$LOG/$lockfile".cron ]]; then rm -f "$LOG/$lockfile".cron; fi
+}
+
+# Check ob Cruzer eingehängt {{{2
+chk_cruzer () {
+    if [[ ! -d "$USB" ]]; then
+        echo "Cruzer nicht eingehängt. Bitte Skript erneut ausführen."
+        exit_script
+        exit 1
+    fi
+}
+
+# Check ob Skript bereits ausgeführt wird {{{2
+chk_if_running () {
+    if [[ -f "$LOG/$lockfile" ]];
+    then
+        echo "Eine andere Instanz des Programms läuft bereits"
+        exit_script
+        exit 1
+    else
+        touch "$LOG/$lockfile"
+    fi
+}
+
+# Check ob Cronskript bereits ausgeführt wird {{{2
+chk_if_running_cron () {
+    if [[ -f "$LOG/$lockfile".cron ]]; then
+        if [[ "$LOG/$lockfile".cron -ot "$LOG/$lockfile_glob" ]]; then
+            # Lockfile löschen falls älter als ein tag
+            rm -f "$LOG/$lockfile".cron
+        else
+            # Skript beenden
+            echo "Ein Cronjob läuft bereits"
+            exit_script
+            exit 1
+        fi
+    else
+        # Neue Lockfile anlegen
+        touch "$LOG/$lockfile".cron
+    fi
+}
+
+# Check ob Wlan vorhanden {{{2
+chk_wlan_conn ()
+{
+    testconnection=`wget --tries=3 --timeout=15 www.google.com -O /tmp/.testinternet &>/dev/null 2>&1`
+    if [[ $? != 0 ]]; then
+        echo 'Es besteht keine Verbidnung zum Internet!'
+        exit 0
+    else
+        rm /tmp/.testinternet  > /dev/null 2>&1
+        echo "Wlan-Verbindung besteht, Skript wird ausgeführt."
+    fi
+}
+
+# Synchronisation {{{2
+
+# Remote nach Lokal {{{2
+sync_rem_local () {
+
+    # Ordner von SSH-Remote Server nach Local synchronisieren
+
+    # Option für mehrere Ordner
+    for i in $(ssh -q sdjopeto@student.uni-due.de find public_html/* -maxdepth 0 -type d | sed 's:.*/::')
+    do
+        if [[ ! -d $UNIMAT/$SMTR/$i ]]; then mkdir -p $UNIMAT/$SMTR/Bloomberg/$i; fi
+        rsync --progress -auvbe ssh --iconv=UTF-8,ISO8859-1 --exclude '*~' --delete --backup-dir=$TMPUNI "$SSH/$i"/ "$UNIMAT/$SMTR/Bloomberg/$i"/
+    done
+
+    # # Option für einzelnen Ordner
+    # rsync --progress -auvbe ssh --iconv=UTF-8,ISO8859-1 --exclude '*~' --delete --backup-dir=$TMPUNI $SSH/Bloomberg/ $UNIMAT/$SMTR/Bloomberg/
+    # notify-send --hint=int:transient:1 "Daten erfolgreich synchronisiert"
+
+}
+
+# Synchronisation zu Remote-Server {{{2
+sync_rem ()
+{
+    # Auf Remote SSH synchronisieren
+    rsync --progress -auve ssh --iconv=UTF-8,ISO8859-1 --exclude '^.' --exclude '*~' --delete "$UNIMAT/$SMTR/Bloomberg"/ "$SSH"/
+}
+
+# Remote zu Cruzer {{{2
+sync_rem_cruzer ()
+{
+    # syncing folders & creating html index
+    echo "syncing to cruzer ..."
+
+    # Von SSH auf USB-Stick synchronisieren
+    rsync --progress -auve ssh --iconv=UTF-8,ISO8859-1 --exclude '^.' --exclude '*~' --delete "$SSH"/ "$USB/$SMTR/Bloomberg"/
+}
+
+# Harddrive to Cruzer {{{2
+sync_loc_cruzer ()
+{
+    # syncing folders
+    echo "syncing to cruzer ..."
+    rsync --progress --delete-excluded --exclude '^.*' --exclude '*~' \
+        -avbu --delete --backup-dir=$TMPUNI "$UNIMAT/$SMTR"/ "$USB/$SMTR"/
+}
+
+# Cruzer zu Harddrive {{{2
+sync_cruzer_loc ()
+{
+    # syncing folders
+    echo "syncing to harddrive ..."
+    rsync --progress --delete-excluded --exclude '^.*' --exclude '*~' \
+        -avbu --delete --backup-dir=$TMPUNI "$USB/$SMTR"/ "$UNIMAT/$SMTR"/
+
+    if [[ -d "$USB/$SMTRALT" ]]; then
+    rsync --progress --delete-excluded --exclude '^.*' --exclude '*~' \
+        -avbu --delete --backup-dir=$TMPUNI "$USB/$SMTRALT"/ "$UNIMAT/$SMTRALT"/
+    fi
+
+    # # creating html index
+    # for f in $(find $USB/$SMTR/Bloomberg/ -type d); do autoindex.sh $f | tee $f/index.html; done
+}
+
+
+# Start Functions {{{1
+
+# Start Upload {{{2
+start_upl ()
+{
+    #.Check.whether.script.is.already.getting.executed
+    chk_if_running
+
+    #.Internetverbindung.überprüfen
+    chk_wlan_conn
+
+    #.syncronizing.to.remote-server
+    sync_rem
+}
+
+# Start Download {{{2
+start_down ()
+{
+    #.Check.whether.script.is.already.getting.executed
+    chk_if_running
+
+    #.Internetverbindung.überprüfen
+    chk_wlan_conn
+
+    if [ -d "/media/zapata/ES02224159"  ]; then
+        #.Local.syncronization.to.Cruzer
+        sync_rem_cruzer
+        sync_rem_local
+        #sync_cruzer_loc
+    else
+        #.Local.syncronization
+        sync_rem_local
+    fi
+}
+
+# Start Cruzer {{{2
+start_cruzer ()
+{
+    #.Check.whether.script.is.already.getting.executed
+    chk_if_running
+
+    # Check if cruzer is mounted
+    chk_cruzer
+
+    # choosing direction of syncmode
+    selPrompt="Wähle eine dieser Optionen: "
+    selOptions=("usb -> harddrive" "local -> usb" "exit")
+    PS3="$selPrompt"
+    select opt in "${selOptions[@]}"; do
+        case "$REPLY" in
+            1 ) echo "Du hast Option $REPLY gewählt: $opt"
+                # syncincg from usb -> local
+                sync_cruzer_loc
+                ;;
+            2 ) echo "Du hast Option $REPLY gewählt: $opt"
+                # syncincg from local -> usb
+                sync_loc_cruzer
+                ;;
+            3 ) echo "Du hast Option $REPLY gewählt: $opt"
+                echo "Skript beendet!"
+                exit 0
+                ;;
+            *) echo "Ungültige Option. Wähle etwas anderes.";continue
+                ;;
+        esac; break
+    done
+
+    # cleaning.flash.drive
+    cp -v $USB/Vim/_vimrc $USB/Vim/_config.pw $HOME/tmp/
+    if [[ `ls -A $USB/ | wc -l` -gt 7 ]] || [[ -n `ls -A $USB/tmpcruzer 2> /dev/null` ]]; then
+        zenity --question --title=".:: USB ::." \
+            --text="Es befinden sich weitere Daten auf dem USB Stick.\nMöchtest du überflüssige Dateien nach ~/tmp/ verschieben?"
+        if [ $? = 0 ]; then
+            cp -rv $USB/tmpcruzer $HOME/tmp/
+            for i in $(find $USB -mindepth 1 -maxdepth 1 | egrep -v\
+                "(Winter|Sommer|tmpcruzer|[vV]im|passw|Id.txt)"); do mv -v "$i" $HOME/tmp/; done
+            rm -rv $USB/tmpcruzer; mkdir -p $USB/tmpcruzer
+        fi
+    fi
+
+}
+
+# Auswahlmenue {{{1
+case $1 in
+    update|upd|u|up)
+        start_upl
+        exit_script
+        exit 0
+        ;;
+
+    dwn|down|dow|do|d)
+        start_down
+        exit_script
+        exit 0
+        ;;
+
+    cronsync|cron)
+        chk_if_running_cron
+        start_down
+        sleep 1200
+        exit_script
+        exit 0
+        ;;
+
+    usb|cruzer|cruz|cru|cr|c)
+        start_cruzer
+        exit_script
+        exit 0
+        ;;
+
+    *)
+        echo "usage: $0 $opt"
+        exit_script
+        exit 1
+        ;;
+
+esac
+
+# EOF {{{2

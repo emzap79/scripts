@@ -1,0 +1,22 @@
+#!/bin/bash
+# dings & bumms in march 2012.
+# open images with newsbeuter in feh or tty
+if echo "$1" | grep -e jpg$ -e jpeg$ -e gif$ -e png$ ; then
+       if [ ${DISPLAY:-'UNDEFINED_VARIABLE'} != 'UNDEFINED_VARIABLE' ] ; then 
+    feh -. "$1" 
+  else
+DIR="/tmp/newspics" 
+if [ ! -e $DIR ] ; then 
+ mkdir $DIR 
+ chmod 0755 $DIR 
+else
+ rm -f $DIR/* 
+fi
+ DOWN="$1 -P $DIR"
+ wget $DOWN  
+       BILD="$(echo ${1##*/})" 
+fbi $DIR/$BILD  
+fi
+ else
+  w3m "$1" 
+fi

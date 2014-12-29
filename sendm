@@ -1,0 +1,11 @@
+#!/bin/bash
+date '+From username@gmail.com %a %b %e %T %Y' > /tmp/autoemail
+echo "Subject: Auto_Create_Email" >> /tmp/autoemail
+echo "From: A_User <username@gmail.com>" >> /tmp/autoemail
+echo "To: Sent_To_Person@gmail.com, 2nd_Person@micron.com" >> /tmp/autoemail
+echo "">> /tmp/autoemail
+echo "This message was autocreated" >> /tmp/autoemail
+echo "2nd Line" >> /tmp/autoemail
+echo "">> /tmp/autoemail
+cat /tmp/autoemail >> /home/user/.evolution/mail/local/Outbox
+exit 0

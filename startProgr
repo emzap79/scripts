@@ -1,0 +1,152 @@
+#!/bin/bash
+# vim:fdm=syntax
+# xterm +local
+start_firefox ()
+{
+    chkfirefox=$(top -n1 | grep firefox | wc -l)
+    if [[ $chkfirefox = 0 ]];then
+        /usr/bin/firefox &
+    else
+        echo "Eine Instanz von Firefox läuft bereits"
+    fi
+}
+start_gnote ()
+{
+    chkgnote=$(ps -aef | grep -v grep | grep gnote | wc -l)
+    if [[ $chkgnote = 0 ]];then
+        /usr/bin/gnote &
+    else
+        echo "Eine Instanz von Gnote läuft bereits"
+    fi
+}
+start_empathy ()
+{
+    chkempathy=$(top -n1 | grep empathy | wc -l)
+    if [[ $chkempathy = 0 ]];then
+        /usr/bin/empathy --no-connect &
+    else
+        echo "Eine Instanz von Empathy läuft bereits"
+    fi
+}
+start_torrent ()
+{
+    if [[ -e `which transmission-gtk` ]]; then
+        chktorrent=$(top -n1 | grep transmission-gtk | wc -l)
+        if [[ $chktorrent = 0 ]];then
+            #/usr/bin/transmission-gtk --display=:0 0 >> /dev/null 2>1
+            /usr/bin/transmission-gtk &
+        else
+            echo "One instance of this program is already running!"
+        fi
+    else
+        echo "transmission-gtk not in Programs list, install it later!"
+    fi
+}
+start_gwibber ()
+{
+    if [[ -e `which gwibber` ]]; then
+        chkgwibber=$(top -n1 | grep gwibber | wc -l)
+        if [[ $chkgwibber = 0 ]];then
+            #/usr/bin/gwibber --display=:0 0 >> /dev/null 2>1
+            /usr/bin/gwibber &
+        else
+            echo "One instance of this program is already running!"
+        fi
+    else
+        echo "Gwibber not in Programs list, install it later!"
+    fi
+}
+start_skype ()
+{
+    chkskype=$(top -n1 | grep skype | wc -l)
+    if [[ $chkskype == 0 ]];
+    then
+        /usr/bin/skype-launcher &
+        #/usr/bin/skype-launcher --display=:1 0 >> /dev/null 2>1
+    else
+        echo "Eine Instanz von Skype läuft bereits"
+    fi
+}
+start_fetchm ()
+{
+    fetchmail
+}
+start_newsbeuter ()
+{
+    chknewsb=$(top -n1 | grep newsbeuter | wc -l)
+    if [[ $chknewsb == 0 ]]; then
+        /bin/bash ~/bin/cronNewsbtr
+    else
+        echo "Eine Instanz von Newsbeuter läuft bereits"
+    fi
+}
+start_coffee ()
+{
+    /bin/bash ~/bin/coffee off
+}
+goto_functions() {
+    # Programme starten
+    gsettings set org.gnome.shell enabled-extensions "['auto-move-windows@gnome-shell-extensions.gcampax.github.com', 'gnome-shell-imgur@ttll.de', 'native-window-placement@gnome-shell-extensions.gcampax.github.com', 'notesearch@rrochet.fr', 'SkypeNotification@chrisss404.gmail.com', 'system-monitor@paradoxxx.zero.gmail.com', 'user-theme@gnome-shell-extensions.gcampax.github.com', 'weather-extension@xeked.com', 'windowoverlay-icons@sustmidown.centrum.cz', 'workspace-indicator@gnome-shell-extensions.gcampax.github.com']"
+
+    if [[ $1  ==  "coffee" ]] || [[ $1  ==  "" ]]; then
+        start_coffee
+    fi
+    if [[ $1  ==  "empathy" ]] || [[ $1  ==  "" ]]; then
+        start_empathy
+    fi
+    if [[ $1  ==  "gnote" ]] || [[ $1  ==  "" ]]; then
+        start_gnote
+    fi
+    if [[ $1  ==  "firefox" ]] || [[ $1  ==  "" ]]; then
+        start_firefox
+    fi
+    if [[ $1  ==  "fetchmail" ]] || [[ $1  ==  "" ]]; then
+        start_fetchm
+    fi
+    if [[ "$1" == "newsbeuter" ]] || [[ $1  ==  "" ]]; then
+        start_newsbeuter
+    fi
+    if [[ $1  ==  "gwibber" ]] || [[ $1  ==  "" ]]; then
+        start_gwibber
+    fi
+    if [[ $1  ==  "torrent" ]] || [[ $1  ==  "" ]]; then
+        start_torrent
+    fi
+    if [[ $1  ==  "skype" ]] || [[ $1  ==  "" ]]; then
+        start_skype
+    fi
+}
+goto_config(){
+numb=0
+wlan='Box 7362 SL'
+chkPower=$(acpi -a | awk '{print $3}' | cut -d '-' -f 1)
+chkWlanHome=$(nm-tool | grep -B 3 connected | grep 7362 | wc -l)
+if [[ $chkPower != "on" ]]; then exit 1; fi
+while [[ $numb -lt 2 ]];
+do
+    # check if the user has an active internet connection
+    testconnection=`wget --tries=3 --timeout=15 www.google.com -O /tmp/.testinternet &>/dev/null 2>&1`
+    if [[ $? != 0 ]];
+    then
+        exec 3> >(zenity --notification --listen)
+        echo "message:You are not connected to the Internet. Please check your"
+        echo "Internet connection and try again." >&3
+        sleep 20
+        numb=$(($numb+1))
+    else
+        # Check if connected from home
+        if [[ $chkWlanHome == 1 ]];
+        then
+            echo "Internet connection - ok"
+            rm /tmp/.testinternet  > /dev/null 2>&1
+            goto_functions
+            exit 0
+        else
+            echo "you are not yet connected to wlan-connection *$wlan*"
+            exit 1
+        fi
+    fi
+done
+}
+goto_config
+# EOF

@@ -1,0 +1,62 @@
+#!/bin/bash
+
+#Konfiguration
+if [[ -n $1 ]]; then
+    string=$1
+else
+    read -p "Gib die PPA-Quelle ein ('deb http://...') " string 
+fi
+
+strtype=${string%%[: ]*}
+repo=${string%%ubuntu*} #Kürzt Ende des Links: 
+repo_neu=${repo#[a-zA-Z]*[: ]}
+chkstring=`cat /etc/apt/sources.list | grep $repo_neu | wc -l`
+if [ $chkstring != 0 ];then
+    echo -e "\nAbbruch!\n\nDiese Repo ist bereits in der Sources.list\nvorhanden und wird deshalb nicht hinzugefügt!"
+    exit 1
+fi
+
+case $strtype in
+    deb)
+        m=${string#deb } #Schneidet den Anfang (deb ) aus dem stringnamen
+        ;;
+    ppa)
+        m=${string#ppa:} #Schneidet den Anfang (ppa) aus dem stringnamen
+        m="http://ppa.launchpad.net/$m/ubuntu $(lsb_release -sc) main"
+        ;;
+    http)
+        m="$string $(lsb_release -sc) main"
+        ;;
+    *)
+        echo "keine PPA-Quelle erkannt."
+        exit 1
+    ;;
+esac
+
+#Superuser-Rechte
+echo "Dieses Skript benötigt Superuser-Rechte"
+sudo echo ""
+
+#PPA-Name
+read -p "Welchen Namen gibst du der PPA? " title
+
+#Programmbeschreibung
+read -p "Willst du eine Programmbeschreibung hinzufügen? (Y|n)? " answer
+case "$answer" in
+    Yes|yes|Y|y|"") 
+        read -p "Beschreibe kurz was das Programm kann/macht: " description
+        echo -e "\n### $title ###\n### $description\ndeb $m #$title Softwarequelle\n#deb-src $m" | sudo tee -a /etc/apt/sources.list
+        ;;
+    No|no|N|n) 
+        echo -e "\n### $title ###\ndeb $m #$title Softwarequelle\n#deb-src $m" | sudo tee -a /etc/apt/sources.list
+        ;;
+esac
+
+#Upload der Quellen und Programminstallation
+read -p "sudo apt-get install " prog
+echo "Es werden zuerst die fehlenden Paketschlüssel importiert..."
+sleep 2
+yes y | sudo launchpad-getkeys 
+sudo apt-get update
+notify-send "Alle Paketquellen erfolgreich aktualisiert!"
+yes y | sudo apt-get install $prog

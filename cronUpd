@@ -1,0 +1,28 @@
+#!/bin/bash
+#Konfiguration
+DATE=`/bin/date +%c`
+
+#check if the user has an active internet connection
+function testConnection() 
+{
+    /bin/sleep 2m
+    testconnection=`wget --tries=3 --timeout=15 www.google.com -O /tmp/.testinternet &>/dev/null 2>&1`
+    if [[ $? != 0 ]]; then
+        exit 0
+    else
+        /usr/bin/notify-send Upgrades\ werden\ heruntergeladen\!
+        rm /tmp/.testinternet  > /dev/null 2>&1
+
+        #Start Upgrading System
+        sudo apt-get update
+        sudo apt-get upgrade
+        sudo apt-get update
+        sudo apt-get dist-upgrade
+        sudo pip install --upgrade pyacoustid pylast pyyaml beets
+        echo letztes\ upgrade\ durchgeführt\ am\ $DATE > $HOME/tmp/upgrades.date
+    fi
+}
+
+#Start
+testConnection
+exit 0
