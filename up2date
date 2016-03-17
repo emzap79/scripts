@@ -1,116 +1,13 @@
 #!/bin/bash
-#Dieses.Skript.stellt.alle.Einstellungen.auf.den.Zustand.vor.dem
-#Upgrade.auf.die.neue.Ubuntu-Version..Verwendung.auf.eigene.Gefahr.
+# Dieses.Skript.stellt.alle.Einstellungen.auf.den.Zustand.vor.dem
+# Upgrade.auf.die.neue.Ubuntu-Version..Verwendung.auf.eigene.Gefahr.
+# Software Management: http://www.linux.com/learn/tutorials/821646-break-the-gui-software-management-from-the-command-line
 
-
-#.###########################
-#.###########################
-#.#.TOC
-#.###########################
-#.###########################
-#{{{
-#.#.Schritt.1.##.Backup.der.aktuellen.Konfiguration
-#.##.Internetverbindung.überprüfen
-#.##.Root-Rechte.eingeben
-#.##.Volume
-#.###.Auswahl.des.Backupordners
-#.##.Systemdateien.kopieren
-#.##.Auslagerungsdatei
-#.###.Logfiles.anlegen
-#
-#.#.Schritt.2.##.PPAs.wiederherstellen.
-#.##.Backup.Sources-List
-#.##.Sourceslist.wiederherstellen
-#.##.Manuelle.Eingabe.zur.Sources.List.
-#.##.Y-PPA-Manager.verwenden.
-#.##.Sources.List.auf.neuen.Stand.bringen
-#
-#.#.Schritt.3.##.Software.&.Sicherung
-#.##.Paketquellen.updaten
-#.##.Codecs.installieren.
-#.##.DUREP
-#.##.TLP.installieren
-#.##.Java.installieren
-#.##.Cups.PDF.installieren.
-#
-#.#.Schritt.4.##.Externe.Software.installieren.
-#.##.Beets.installieren
-#.##.Deepin.Scrot.installieren
-#.##.Dropbox.installieren
-#.##.Hamster.installieren
-#.##.Mendeley.installieren
-#.##.Mutt.installieren
-#.##.R.installieren
-#.##.Scanner.installieren
-#.##.Skype.installieren
-#.##.Wuala.installieren
-#.##.Xmind.installieren
-#.##.Sonstige.Programme
-#.###.Unity.entfernen
-#.#####.Sehr.gefährlich.!!!
-#
-#.#.Schritt.5.##.Themes.&.Multimedia
-#.##.Themes.konfigurieren
-#.###.Elegance.Color.Theme.einrichten
-#.###.Gnome-Terminal.Solarized.Theme
-#.###.Guake.Theme.einrichten
-#.###.Git.Repo.Clonen
-#.###.Colorscheme.Dark.setzen
-#.##.Multimedia.Keys
-#.###.Standardeinstellung.ausschalten
-#.###.Custom.Keys.setzen
-#.###.CUstom.Keys.anwenden
-#.##.Drucker.einrichten.#.https://bbs.archlinux.de/viewtopic.php?pid=257263#p257263
-#.##.Einstellungen.in.Dconf
-#
-#.#.Schritt.6:.Allgemeine.Einstellungen
-#.##.Sudoers-File.editieren.
-#.##.Magic.Sysrq.deaktivieren.
-#.##.Crontab.einrichten.
-#.##.Asus.konfigurieren
-#.##.Two.Finger.Scrolling
-#
-#.#.Schritt.7:.Programme.konfigurieren
-#.##.LaTeX.Einstellungen
-#.##.Beets.konfigurieren
-#
-#.#.Schritt.8:.Shell.Extensions.konfigurieren
-#.##.Automove-Extension
-#.##.Weather.Extension
-#.##.System-Monitor.Extension
-#.##.Home-Ordner.wiederherstellen
-#.##.Schreib-.und.Leserechte.setzen
-#
-#.#.Schritt.10.##.Laptop.neu.starten.
-#.##.Volume.auswerfen
-#.##.Laptop.herunterfahren
-#
-#.#.Schritt.0.1.##.Konfiguration
-#.##.Skripte.ausführbar.machen
-#.##.Benötigte.Software
-#.###.VIM
-#.###.Git-Core
-#
-#.#.Schritt.0.2.:.Auswahlmenu
-#.##.Komplette.Systemwiederherstellung
-#.##.Komplette.Software.nachinstallieren
-#.##.Einstellungen.zurücksetzen
-#.##.Themes.einrichten
-#
-#.#.EOF
-#}}}
-
-#.###########################
-#.###########################
-#.#.Schritt.1.##.Backup.der.aktuellen.Konfiguration
-#.###########################
-#.###########################
+# Schritt 1: Backup der aktuellen Konfiguration                                    {{{1
 
 startscr_check_internet ()
 {
-    #.###########################
     #.##.Internetverbindung.überprüfen
-    #.###########################
     testconnection=`wget --tries=3 --timeout=15 www.google.com -O /tmp/.testinternet &>/dev/null 2>&1`
     if [ $? != 0 ]; then
         echo "Es besteht keine Verbindung zum Internet!"
@@ -121,9 +18,7 @@ startscr_check_internet ()
     fi
 }
 
-#.###########################
-#.##.Root-Rechte.eingeben
-#.###########################
+##.Root-Rechte.eingeben                                                            {{{2
 startscr_root_rights ()
 {
     echo ""
@@ -140,9 +35,7 @@ startscr_root_rights ()
 
 startscr_mount_vol ()
 {
-    #.###########################
     #.##.Volume
-    #.###########################
 
     selTitle=":: External Drives ::"
     selPrompt="Externe Festplatte, auf der sich das Backup befindet: "
@@ -154,7 +47,7 @@ startscr_mount_vol ()
     select EXT in ${selExtDrive[@]} Quit
     do
         case $EXT in
-            "Quit") 
+            "Quit")
                 echo "Goodbye!";
                 exit 1
                 ;;
@@ -174,9 +67,7 @@ startscr_mount_vol ()
             BKP0=$VOL/backup0
             ;;
         No|no|N|n)
-            #.#############
             #.###.Auswahl.des.Backupordners
-            #.#############
             echo ""
             echo "::::::::::::::::::::::::::::::::"
             echo ":: Auswahl des Backup Ordners ::"
@@ -194,12 +85,10 @@ startscr_mount_vol ()
     BKP=`echo "$BKP0" | sed 's/^\(.*\)\/\w*.$/\1/g'`
     LOCDIR="$BKP0/.local/share"
 
-    #.############
     #.##.Systemdateien.kopieren
-    #.############
     echo ""
     echo "Es werden nun die Systemdateien gesucht ..."
-    BKPSAVE=`find $BKP0 -maxdepth 2 -type d -name 'bkpfiles[1-9]*' | grep tmp | sort -n | sed -n '${p;q}'`  
+    BKPSAVE=`find $BKP0 -maxdepth 2 -type d -name 'bkpfiles[1-9]*' | grep tmp | sort -n | sed -n '${p;q}'`
     if [[ ! -e $BKPSAVE ]]; then
         echo "Keine Systemeinstellungen vorhanden in $BKP0."
         read -ep "Bitte Pfadnamen eingeben zu bkptmpfiles " PATH
@@ -224,17 +113,13 @@ startscr_mount_vol ()
     sudo -u $USER cp -rv $BKP0/.logfiles $BKP0/.gtk-bookmarks $SAVEDIR/
     #
     #
-    #.############
     #.##.Auslagerungsdatei
-    #.############
     version=`lsb_release -sc | sed 's/\(.\)/\U\1/g'`
     oldversion=`cat $SAVEDIR/sources.list | grep "main restricted" | awk 'FNR == 1{print}' | sed 's/^.* \(.*\) main restricted/\1/g'`
     if [ ! -e "$HOME/.bkp/bkpfiles`date +%y%m`$version" ]; then mkdir -p "$HOME/.bkp/bkpfiles`date +%y%m`$version"; fi
     #
     #
-    #.#############
     #.###.Logfiles.anlegen
-    #.#############
     UPG="$HOME/.bkp"
     mkdir -p $UPG/bkpfiles`date +%y%m`$version
     logfile=$UPG/bkpfiles`date +%y%m`$version/up2date.log
@@ -262,20 +147,14 @@ check_bkp ()
     fi
 }
 
-#.###########################
-#.###########################
-#.#.Schritt.2.##.PPAs.wiederherstellen.
-#.###########################
-#.###########################
+# Schritt 2: PPAs wiederherstellen                                                 {{{1
 check_ppas ()
 {
     read -p "Möchtest du die alten PPAs wiederherstellen (Y|n)? " answer
     case $answer in
         Yes|yes|Y|y|"")
 
-            #.###########################
-            #.##.Backup.Sources-List
-            #.###########################
+            #.##.Backup.Sources-List                                               {{{2
             if [ ! -e "$UPG/sources.list" ]; then
                 sudo -u $USER cp -prv /etc/apt/sources.list.d /etc/apt/sources.list $UPG/
                 cp -v /etc/apt/sources.list /etc/apt/sources.list.bkp
@@ -285,9 +164,7 @@ check_ppas ()
                 echo "Paketquellen für $version gesichert!"
             fi
 
-            #.###########################
-            #.##.Sourceslist.wiederherstellen
-            #.###########################
+            #.##.Sourceslist.wiederherstellen                                      {{{2
             sudo -u $USER cp -v /etc/apt/sources.list /etc/apt/sources.list.bkp
             if [ -e "$SAVEDIR/sources.list" ]; then
                 sudo -u $USER cp -pv $SAVEDIR/sources.list /etc/apt/sources.list
@@ -301,17 +178,13 @@ check_ppas ()
                 read -p "Eingabe: " answer
                 case "$answer" in
                     m|M)
-                        #.###########################
                         #.##.Manuelle.Eingabe.zur.Sources.List.
-                        #.###########################
                         read -p "Gib den Pfad zur alten Sources list an: " $source
                         sudo -u $USER cp -pv $source /etc/apt/sources.list
                         ;;
 
                     y|Y)
-                        #.###########################
                         #.##.Y-PPA-Manager.verwenden.
-                        #.###########################
                         if [ `dpkg-query --show | grep y-ppa-manager | wc -l` = 0 ]; then
                             if [ $(cat /etc/apt/sources.list | grep y-ppa-manager | wc -l) = 0 ]; then
                                 echo "
@@ -328,9 +201,7 @@ check_ppas ()
             fi
 
 
-            #.###########################
             #.##.Sources.List.auf.neuen.Stand.bringen
-            #.###########################
             if [ -e /etc/apt/sources.list ]; then
                 sed -i "s/$oldversion/$(lsb_release -sc)/g" /etc/apt/sources.list
             else
@@ -350,16 +221,10 @@ check_ppas ()
 
 }
 
-#.###########################
-#.###########################
-#.#.Schritt.3.##.Software.&.Sicherung
-#.###########################
-#.###########################
+# Schritt 3: Software & Sicherung                                                  {{{1
 inst_softw ()
 {
-    #.###########################
-    #.##.Paketquellen.updaten
-    #.###########################
+    #.##.Paketquellen.updaten                                                      {{{2
     if [[ ! `which launchpad-getkeys` ]]; then
         yes y | add-apt-repository ppa:nilarimogard/webupd8
         yes y | update
@@ -374,39 +239,29 @@ inst_softw ()
     yes y | apt-get update
     yes y | launchpad-getkeys
 
-    #.###########################
-    #.##.Codecs.installieren.
-    #.###########################
+    #.##.Codecs.installieren.                                                      {{{2
     if [ $(dpkg-query --show | grep libdvdread4 | wc -l) = 0 ]; then
         yes y | apt-get install libdvdread4
         yes y | sh /usr/share/doc/libdvdread4/install-css.sh
     fi
 
-    #.###########################
-    #.##.DUREP
-    #.###########################
+    #.##.DUREP                                                                     {{{2
     if [ $(dpkg-query --show | grep durep | wc -l) == 0 ]; then
         yes y | apt-get install durep
     fi
 
-    #.###########################
-    #.##.TLP.installieren
-    #.###########################
+    #.##.TLP.installieren                                                          {{{2
     yes y | apt-get update
     yes y | apt-get install tlp tlp-rdw smartmontools ethtool
 
-    #.###########################
-    #.##.Java.installieren
-    #.###########################
+    #.##.Java.installieren                                                         {{{2
     if [ $(dpkg-query --show | grep oracle-java | wc -l) = 0 ]; then
         yes y | apt-get install oracle-java"$chkVersJava"-installer
         yes y | apt-get install update-java
         /usr/bin/update-java #Update auf neueste Version
     fi
 
-    #.###########################
-    #.##.Cups.PDF.installieren.
-    #.###########################
+    #.##.Cups.PDF.installieren.                                                    {{{2
     if [ `dpkg-query --show | grep cups-pdf | wc -l` = 0 ]; then
         yes y | apt-get install cups-pdf;
     fi
@@ -418,107 +273,75 @@ inst_softw ()
 }
 
 
-#.###########################
-#.###########################
-#.#.Schritt.4.##.Externe.Software.installieren.
-#.###########################
-#.###########################
+# Schritt 4: Externe Software installieren                                         {{{1
 inst_extsoftw ()
 {
 
-    #.#############
-    #.##.Beets.installieren
-    #.#############
+    #.##.Beets.installieren                                                        {{{2
     if [ $(dpkg-query --show | grep beets | wc -l) == 0 ]; then
         /bin/bash "$HOME/bin/instBeets"
     fi
 
-    #.#############
-    #.##.Deepin.Scrot.installieren
-    #.#############
+    #.##.Deepin.Scrot.installieren                                                 {{{2
     if [ $(dpkg-query --show | grep scrot | wc -l) == 0 ]; then
         /bin/bash "$HOME/bin/instDeepinScrot"
     fi
 
-    #.#############
-    #.##.Dropbox.installieren
-    #.#############
+    #.##.Dropbox.installieren                                                      {{{2
     if [ $(dpkg-query --show | grep dropbox | wc -l) == 0 ]; then
         /bin/bash "$HOME/bin/instDropbox"
     fi
 
-    #.#############
-    #.##.Hamster.installieren
-    #.#############
+    #.##.Hamster.installieren                                                      {{{2
     if [ $(dpkg-query --show | grep hamster | wc -l) == 0 ]; then
         /bin/bash "$HOME/bin/instHamster"
     fi
 
-    #.#############
-    #.##.Mendeley.installieren
-    #.#############
+    #.##.Mendeley.installieren                                                     {{{2
     if [ $(dpkg-query --show | grep mendeley | wc -l) == 0 ]; then
         /bin/bash "$HOME/bin/instMendeley"
     fi
 
-    #.#############
-    #.##.Mutt.installieren
-    #.#############
+    #.##.Mutt.installieren                                                         {{{2
     if [ $(dpkg-query --show | grep mutt | wc -l) == 0 ]; then
         /bin/bash "$HOME/bin/instMutt"
     fi
 
-    #.#############
-    #.##.R.installieren
-    #.#############
-    if [ $(dpkg-query --show | grep r-base-core | wc -l) == 0 ]; then 
+    #.##.R.installieren                                                            {{{2
+    if [ $(dpkg-query --show | grep r-base-core | wc -l) == 0 ]; then
         /bin/bash "$HOME/bin/instR"
     fi
 
-    #.#############
-    #.##.Scanner.installieren
-    #.#############
-    if [ $(dpkg-query --show | grep iscan | wc -l) == 0 ]; then 
+    #.##.Scanner.installieren                                                      {{{2
+    if [ $(dpkg-query --show | grep iscan | wc -l) == 0 ]; then
         /bin/bash "$HOME/bin/instScanner"
     fi
 
-    #.#############
-    #.##.Silverlight.installieren
-    #.#############
-    if [ $(dpkg-query --show | grep pipelight | wc -l) == 0 ]; then 
+    #.##.Silverlight.installieren                                                  {{{2
+    if [ $(dpkg-query --show | grep pipelight | wc -l) == 0 ]; then
         /bin/bash "$HOME/bin/instSilverlightPlugin"
     fi
 
-    #.#############
-    #.##.Skype.installieren
-    #.#############
-    if [ $(dpkg-query --show | grep skype | wc -l) == 0 ]; then 
+    #.##.Skype.installieren                                                        {{{2
+    if [ $(dpkg-query --show | grep skype | wc -l) == 0 ]; then
         /bin/bash "$HOME/bin/instSkype"
     fi
 
-    #.#############
-    #.##.Wuala.installieren
-    #.#############
-    if [ $(dpkg-query --show | grep wuala | wc -l) == 0 ]; then 
+    #.##.Wuala.installieren                                                        {{{2
+    if [ $(dpkg-query --show | grep wuala | wc -l) == 0 ]; then
         /bin/bash "$HOME/bin/instWuala"
     fi
 
-    #.#############
-    #.##.Xmind.installieren
-    #.#############
+    #.##.Xmind.installieren                                                        {{{2
     if [ $(dpkg-query --show | grep xmind | wc -l) == 0 ]; then
         /bin/bash "$HOME/bin/instXmind"
     fi
 
-    #.#############
-    #.##.Sonstige.Programme
-    #.#############
+    #.##.Sonstige.Programme                                                        {{{2
     for i in $logfileinst; do yes y | apt-get install $i; done #Installation der Programme
 }
 
-#.############################
-#.###.Unity.entfernen
-#.############################.
+###.Unity.entfernen                                                                {{{2
 deinst_unity ()
 {
     prog="Unity"
@@ -547,9 +370,7 @@ deinst_unity ()
                 yes y | apt-get autoremove
                 yes y | apt-get autoclean
 
-                #.##############
                 #.#####.Sehr.gefährlich.!!!
-                #.##############
                 #yes.y.|.apt-get.purge.`deborphan`
                 #yes.y.|.dpkg.--purge.`dpkg.-l.|.egrep."^rc".|.cut.-d'.'.-f3`
                 ;;
@@ -564,20 +385,12 @@ deinst_unity ()
     fi
 }
 
-#.###########################
-#.###########################
-#.#.Schritt.5.##.Themes.&.Multimedia
-#.###########################
-#.###########################
+# Schritt 5: Themes & Multimedia                                                   {{{1
 
-#.###########################
-#.##.Themes.konfigurieren
-#.###########################
+##.Themes.konfigurieren                                                            {{{2
 conf_theme ()
 {
-    #.#############
     #.###.Elegance.Color.Theme.einrichten
-    #.#############
     echo ""
     read -p "Elegance Colors Theme einrichten (y|N)? " answer
     case "$answer" in
@@ -598,16 +411,14 @@ conf_theme ()
             echo "Thema installiert, du kannst die Einstellungen verändern"
             echo "indem du 'Elegance Colors Preferences' aufrufst. [ENTER] "
             ;;
-        No|no|N|n|"") 
+        No|no|N|n|"")
             echo "Elegance Colors einrichten übersprungen"
             ;;
         *) echo "Unbekannter Parameter"
             ;;
     esac
 
-    #.#############
-    #.###.Gnome-Terminal.Solarized.Theme
-    #.#############
+    #.###.Gnome-Terminal.Solarized.Theme                                           {{{2
     echo ""
     read -p "Möchtest du das Thema Solarized für dein Terminal verwenden? (y|N) " answer
     case $answer in
@@ -623,16 +434,12 @@ conf_theme ()
             ;;
     esac
 
-    #.#############
-    #.###.Guake.Theme.einrichten
-    #.#############
+    #.###.Guake.Theme.einrichten                                                   {{{2
     echo ""
     read -p "Möchtest du Guake-Solarized-Theme installieren? (y|N) " answer
     case "$answer" in
         Yes|yes|Y|y)
-            #.#############
             #.###.Git.Repo.Clonen
-            #.#############
             if [[ ! -s "/home/zapata/.themes" ]]; then mkdir -p $HOME/.themes; fi
             if [[ ! -s "/home/zapata/.gconf" ]]; then mkdir -p $HOME/.gconf; fi
             if [[ ! -s "$HOME/.themes/guake-colors-solarized" ]]; then
@@ -640,9 +447,7 @@ conf_theme ()
                 sudo -u $USER git clone https://github.com/coolwanglu/guake-colors-solarized.git
             fi
 
-            #.#############
             #.###.Colorscheme.Dark.setzen
-            #.#############
             cd $HOME/.themes/guake-colors-solarized
             /bin/bash ./set_dark.sh
             cd $HOME
@@ -653,23 +458,17 @@ conf_theme ()
     esac
 }
 
-#.###########################
-#.##.Multimedia.Keys
-#.###########################
+##.Multimedia.Keys                                                                 {{{2
 conf_multim ()
 {
-    #.#############
     #.###.Standardeinstellung.ausschalten
-    #.#############
     gsettings set org.gnome.settings-daemon.plugins.media-keys next ''
     gsettings set org.gnome.settings-daemon.plugins.media-keys pause ''
     gsettings set org.gnome.settings-daemon.plugins.media-keys play ''
     gsettings set org.gnome.settings-daemon.plugins.media-keys previous ''
     gsettings set org.gnome.settings-daemon.plugins.media-keys stop ''
 
-    #.#############
     #.###.Custom.Keys.setzen
-    #.#############
     gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ binding 'XF86AudioPlay'
     gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ command 'cmus-remote --pause'
     gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/ name 'Cmus Pause'
@@ -686,15 +485,11 @@ conf_multim ()
     gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/ command 'cmus-remote --stop'
     gsettings set org.gnome.settings-daemon.plugins.media-keys.custom-keybinding:/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/ name 'Cmus Stop'
 
-    #.#############
-    #.###.CUstom.Keys.anwenden
-    #.#############
+    #.###.CUstom.Keys.anwenden                                                     {{{3
     gsettings set org.gnome.settings-daemon.plugins.media-keys custom-keybindings "['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom0/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom1/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom2/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom3/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom4/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/custom5/']"
 }
 
-#.###########################
-#.##.Drucker.einrichten # https://bbs.archlinux.de/viewtopic.php?pid=257263#p257263
-#.###########################
+##.Drucker.einrichten # https://bbs.archlinux.de/viewtopic.php?pid=257263#p257263  {{{2
 conf_print ()
 {
     read -p "Möchtest du den Drucker jetzt einrichten? (y|N) " answer
@@ -710,16 +505,14 @@ conf_print ()
     esac
 }
 
-#.############################
-#.##.Einstellungen.in.Dconf
-#.###########################.
+##.Einstellungen.in.Dconf                                                          {{{2
 conf_dconf ()
 {
     read -p "Möchtest du GNOME Keybindings und wichtige Einstellungen wiederherstellen (y|N)? " answer
     case $answer in
         Yes|yes|Y|y)
 
-            ####.General.Settings.########
+            ####.General.Settings.#######                                        # {{{3
             gsettings set org.gnome.desktop.sound event-sounds false
             gsettings set org.gnome.desktop.interface clock-show-date true
             gsettings set org.gnome.settings-daemon.peripherals.touchpad touchpad-enabled true
@@ -729,10 +522,10 @@ conf_dconf ()
             gsettings set org.gnome.gnome-screenshot auto-save-directory '/home/zapata/tmp/snapshots'
             sed -i 's/^enabled.*/enabled\=0/g' /etc/default/apport #Deaktiviert Ubuntus Fehlermeldungen
 
-            ####.Default Applications.####
+            ####.Default Applications.###                                        # {{{3
             xdg-mime default evince.desktop application/pdf
 
-            ####.Keybindings.Settings.####
+            ####.Keybindings.Settings.###                                        # {{{3
             gsettings set org.gnome.desktop.wm.keybindings maximize "['<Alt>F11']" #Stellt Shortcuts wieder her
             gsettings set org.gnome.desktop.wm.keybindings unmaximize "['<Alt>F10']"
             gsettings set org.gnome.desktop.wm.keybindings switch-to-workspace-1 "['<Super>1']"
@@ -745,7 +538,7 @@ conf_dconf ()
             gsettings set org.gnome.desktop.wm.keybindings move-to-workspace-4 "['<Alt><Super>4']"
             gsettings set org.gnome.desktop.wm.keybindings show-desktop "['<Alt><Shift>A']"
 
-            ####.Screensaver.Settings.####
+            ####.Screensaver.Settings.###                                        # {{{3
             gsettings set org.gnome.desktop.session idle-delay 600 #Sekunden bis Screensaver aktiviert wird
             #gsettings.set.org.gnome.settings-daemon.plugins.power.sleep-display-ac.600
             #gsettings.set.org.gnome.settings-daemon.plugins.power.sleep-display-battery.600
@@ -755,7 +548,7 @@ conf_dconf ()
             echo "Alle wichtigen Shortcuts sind nun wieder hergestellt!"
 
             ;;
-        No|no|N|n|"") 
+        No|no|N|n|"")
 
             echo "Operation abgebrochen Festplatte anschließen" >> $logfile
             ;;
@@ -764,16 +557,10 @@ conf_dconf ()
     esac
 }
 
-#.###########################
-#.###########################
-#.#.Schritt.6:.Allgemeine.Einstellungen
-#.###########################
-#.###########################
+# Schritt 6: Allgemeine Einstellungen                                              {{{1
 conf_allr ()
 {
-    #.###########################
-    #.##.Sudoers-File.editieren.
-    #.############################
+    #.##.Sudoers-File.editieren.                                                   {{{2
     if [ ! -e /etc/sudoers.bkp ];then
         sudo -u $USER cp -pv /etc/sudoers /etc/sudoers.bkp #Erlaubt System-Shutdown ohne Passwort-Eingabe
         echo "
@@ -781,16 +568,12 @@ conf_allr ()
         zapata ALL = NOPASSWD: /sbin/shutdown" | tee -a /etc/sudoers #Wird an Dateiende angehängt!
     fi
 
-    #.############################
-    #.##.Magic.Sysrq.deaktivieren.
-    #.############################
+    #.##.Magic.Sysrq.deaktivieren.                                                 {{{2
     if [ `cat /etc/sysctl.conf | grep 'kernel.sysrq = 0' | wc -l` = 0 ]; then
         echo "kernel.sysrq = 0" | tee -a /etc/sysctl.conf #disable interpreting magic sysrq
     fi
 
-    #.############################
-    #.##.Crontab.einrichten.
-    #.############################
+    #.##.Crontab.einrichten.                                                       {{{2
     if [ `crontab -l | wc -l` = 0 ]; then
 
         read -p "Bitte Crontab-Editor festlegen [ENTER] "
@@ -801,9 +584,7 @@ conf_allr ()
         echo "Alte Crontab-Tabelle wieder eingerichtet!"
     fi
 
-    #.############################
-    #.##.Asus.konfigurieren
-    #.############################
+    #.##.Asus.konfigurieren                                                        {{{2
     if [ ! -e /etc/pm/sleep.d/20_custom_ehci_hcd ];then
         read -p "Hibernate-Modus aktivieren (y|N) " answer
         case "$answer" in
@@ -837,24 +618,16 @@ conf_allr ()
         esac
     fi
 
-    #.############################
-    #.##.Two.Finger.Scrolling
-    #.############################
+    #.##.Two.Finger.Scrolling                                                      {{{2
     gsettings set org.gnome.settings-daemon.peripherals.touchpad scroll-method 'two-finger-scrolling'
     gsettings set org.gnome.desktop.sound theme-name 'freedesktop'  # Soundeffekte ausschalten
 }
 
-#.###########################
-#.###########################
-#.#.Schritt.7:.Programme.konfigurieren
-#.###########################
-#.###########################
+# Schritt 7: Programme konfigurieren                                               {{{1
 conf_progr ()
 {
 
-    #.############################
-    #.##.LaTeX.Einstellungen
-    #.############################
+    #.##.LaTeX.Einstellungen                                                       {{{2
     if [ -e $HOME/.latexfiles ]; then
         if [ ! -e /usr/share/texmf-texlive/bibtex/bst/natdin.bst ];then
             echo "LaTeX Einstellungen werden vorgenommen"
@@ -872,17 +645,13 @@ conf_progr ()
     fi
     cd $HOME
 
-    #.###########################
-    #.##.Beets.konfigurieren
-    #.###########################
+    #.##.Beets.konfigurieren                                                       {{{2
     read -p "Beets (strong_rec_thresh) wird eingestellt [ENTER] "
-    for i in $(locate beets | grep autotag | grep usr | egrep 'match.py$'); do 
+    for i in $(locate beets | grep autotag | grep usr | egrep 'match.py$'); do
         sed -i 's/STRONG_REC_THRESH = .*$/STRONG_REC_THRESH = 0.23/g' "$i"
     done
 
-    ##.###########################
-    ##.##.Cmus-Plugins.wiederherstellen
-    ##.###########################
+    ##.##.Cmus-Plugins.wiederherstellen                                            {{{2
     #read.-p."Möchtest.alle.Cmus-Plugins.aktivieren.(y|N)?.".answer
     #case."$answer".in
     #Yes|yes|Y|y)
@@ -904,11 +673,7 @@ conf_progr ()
 
 }
 
-#.###########################
-#.###########################
-#.#.Schritt.8:.Shell.Extensions.konfigurieren
-#.###########################
-#.###########################
+# Schritt 8: Shell Extensions konfigurieren                                        {{{1
 conf_shell_ext ()
 {
     read -p "Gnome-Shell Extensions einstellen? (y|N) " answer
@@ -924,21 +689,15 @@ conf_shell_ext ()
             read -p "Um fortzufahren [ENTER] "
 
 
-            #.#############
-            #.##.Automove-Extension
-            #.#############
+            #.##.Automove-Extension                                                {{{2
             gsettings set org.gnome.shell.extensions.auto-move-windows \
                 application-list \
                 "`cat $SAVEDIR/extensions.log sed '/^\#\{3\} Automove/,/^\#/!d;/^\#.*$/d'`"
 
-            #.#############
-            #.##.Weather.Extension
-            #.#############
+            #.##.Weather.Extension                                                 {{{2
             gsettings set org.gnome.shell.extensions.weather woeid 'GMXX3998' #Einstellung für Bochum
 
-            #.###########################
-            #.##.System-Monitor.Extension
-            #.###########################
+            #.##.System-Monitor.Extension                                          {{{2
             gsettings set org.gnome.shell.extensions.system-monitor battery-display false
             gsettings set org.gnome.shell.extensions.system-monitor disk-display false
             gsettings set org.gnome.shell.extensions.system-monitor freq-display false
@@ -970,9 +729,7 @@ conf_shell_ext ()
 
 copy_to_home ()
 {
-    #.###########################
-    #.##.Home-Ordner.wiederherstellen
-    #.###########################
+    #.##.Home-Ordner.wiederherstellen                                              {{{2
     read -p "Möchtest das Backup nach $HOME kopieren (Y|n)? " answer
     case "$answer" in
         Yes|yes|Y|y|"")
@@ -994,9 +751,7 @@ copy_to_home ()
     esac
 }
 
-#.###########################
-#.##.Schreib-.und.Leserechte.setzen
-#.###########################.
+# Schritt 9: Schreib und Leserechte setzen                                         {{{1
 set_rights ()
 {
     #Mutt.-.Email-Client
@@ -1008,16 +763,10 @@ set_rights ()
     chmod 755 $HOME/.cmus/plugins/*
 }
 
-#.###########################
-#.###########################
-#.#.Schritt.10.##.Laptop.neu.starten.
-#.###########################
-#.###########################
+# Schritt 10: Laptop neu starten                                                   {{{1
 eject_vol ()
 {
-    #.#############
-    #.##.Volume.auswerfen
-    #.#############
+    #.##.Volume.auswerfen                                                          {{{2
     umount $VOL
     while [ $(df | grep $devVOL | wc -l) != 0 ]; do
         echo ""
@@ -1029,9 +778,7 @@ eject_vol ()
     read -p "Du kannst die Festplatte nun aushängen [ENTER] "
 }
 
-#.###########################
-#.##.Laptop.herunterfahren
-#.###########################
+##.Laptop.herunterfahren                                                           {{{2
 stop_engine ()
 {
     echo ""
@@ -1054,44 +801,28 @@ stop_engine ()
 }
 
 
-#.###########################
-#.###########################
-#.#.Schritt.0.1.##.Konfiguration
-#.###########################
-#.###########################
+# Schritt 0.1: Konfiguration                                                       {{{1
 HOME="/home/zapata"
 USER=$(who -q | awk 'FNR == 1{print}')
 date=`/bin/date +%Y%m%d`
 chkVersJava=$(apt-cache search oracle-java | cut -f 2 -d '-' | sed 's/^.*\([0-9]\).*$/\1/g' | sort | tail -1)
 
-#.###########################
-#.##.Skripte.ausführbar.machen
-#.###########################
+##.Skripte.ausführbar.machen                                                      {{{2
 find $HOME/bin/ -type f -exec chmod 755 {} \;
 
-#.###########################
-#.##.Benötigte.Software
-#.###########################
+##.Benötigte.Software                                                             {{{2
 
-#.#############
-#.###.VIM
-#.#############
+###.VIM                                                                            {{{3
 if [ $(dpkg-query --show | grep vim | wc -l) == 0 ]; then
     yes y | apt-get install vim-gtk vim-gnome vim-ruby
 fi
 
-#.#############
-#.###.Git-Core
-#.#############
+###.Git-Core                                                                       {{{3
 if [ $(dpkg-query --show | grep git-core | wc -l) = 0 ]; then
     yes y | apt-get install git-core
 fi
 
-#.###########################
-#.###########################
-#.#.Schritt.0.2.:.Auswahlmenu
-#.###########################
-#.###########################
+# Schritt 0.2: Auswahlmenu                                                         {{{1
 selTitle=":: Auswahlmenu ::"
 selPrompt="Wähle eine der Optionen:"
 selOptions=("Komplette Systemwiederherstellung" "Software installieren" \
@@ -1105,9 +836,7 @@ PS3="$selPrompt "
 select opt in "${selOptions[@]}" "Quit"; do
     case $REPLY in
         1 ) echo "Du hast Option $REPLY gewählt: $opt"
-            #.#############
             #.##.Komplette.Systemwiederherstellung
-            #.#############
             startscr_check_internet
             startscr_root_rights
             startscr_mount_vol
@@ -1135,9 +864,7 @@ select opt in "${selOptions[@]}" "Quit"; do
             ;;
 
         2 ) echo "Du hast Option $REPLY gewählt: $opt"
-            #.#############
             #.##.Komplette.Software.nachinstallieren
-            #.#############
             startscr_check_internet
             startscr_root_rights
             startscr_mount_vol
@@ -1164,9 +891,7 @@ select opt in "${selOptions[@]}" "Quit"; do
             ;;
 
         3 ) echo "Du hast Option $REPLY gewählt: $opt"
-            #.#############
             #.##.Einstellungen.zurücksetzen
-            #.#############
             startscr_check_internet
             startscr_root_rights
             startscr_mount_vol
@@ -1193,9 +918,7 @@ select opt in "${selOptions[@]}" "Quit"; do
             ;;
 
         4 ) echo "Du hast Option $REPLY gewählt: $opt"
-            #.#############
             #.##.Themes.einrichten
-            #.#############
             startscr_check_internet
             startscr_root_rights
             startscr_mount_vol
@@ -1228,9 +951,5 @@ select opt in "${selOptions[@]}" "Quit"; do
             esac; break
         done
 
-        #.###########################
-        #.###########################
         #.#.EOF
-        #.###########################
-        #.###########################
         exit 0

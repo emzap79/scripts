@@ -11,8 +11,8 @@ USB="/media/zapata/ES02224159"
 LOG="$HOME/.logfiles"
 TMPUNI="$HOME/tmp/uniordner"
 SSH='sdjopeto@student.uni-due.de:public_html'
-SMTR='Winter1415'
-SMTRALT='Sommer2014'
+# SEM='Sommer2015'
+# SEMALT='Winter1516'
 lockfile="syncssh.lock"
 lockfile_glob="$(ls $LOG | egrep '[[:digit:]]{8}.lock')"
 opt="{ [upd|up|u] | [down|dwn|d] | [usb|cruzer|cruz] }"
@@ -92,12 +92,12 @@ sync_rem_local () {
     # Option für mehrere Ordner
     for i in $(ssh -q sdjopeto@student.uni-due.de find public_html/* -maxdepth 0 -type d | sed 's:.*/::')
     do
-        if [[ ! -d $UNIMAT/$SMTR/$i ]]; then mkdir -p $UNIMAT/$SMTR/Bloomberg/$i; fi
-        rsync --progress -auvbe ssh --iconv=UTF-8,ISO8859-1 --exclude '*~' --delete --backup-dir=$TMPUNI "$SSH/$i"/ "$UNIMAT/$SMTR/Bloomberg/$i"/
+        if [[ ! -d $UNIMAT/$SEM/$i ]]; then mkdir -p $UNIMAT/$SEM/$i; fi
+        rsync --progress -auvbe ssh --iconv=UTF-8,ISO8859-1 --exclude '^.' --exclude '*~' --delete --backup-dir=$TMPUNI "$SSH/$i"/ "$UNIMAT/$SEM/$i"/
     done
 
     # # Option für einzelnen Ordner
-    # rsync --progress -auvbe ssh --iconv=UTF-8,ISO8859-1 --exclude '*~' --delete --backup-dir=$TMPUNI $SSH/Bloomberg/ $UNIMAT/$SMTR/Bloomberg/
+    # rsync --progress -auvbe ssh --iconv=UTF-8,ISO8859-1 --exclude '^.' --exclude '*~' --delete --backup-dir=$TMPUNI $SSH/ $UNIMAT/$SEM/
     # notify-send --hint=int:transient:1 "Daten erfolgreich synchronisiert"
 
 }
@@ -106,7 +106,7 @@ sync_rem_local () {
 sync_rem ()
 {
     # Auf Remote SSH synchronisieren
-    rsync --progress -auve ssh --iconv=UTF-8,ISO8859-1 --exclude '^.' --exclude '*~' --delete "$UNIMAT/$SMTR/Bloomberg"/ "$SSH"/
+    rsync --progress -auve ssh --iconv=UTF-8,ISO8859-1 --exclude '^.' --exclude '*~' --delete "$UNIMAT/$SEM"/ "$SSH"/
 }
 
 # Remote zu Cruzer {{{2
@@ -116,7 +116,7 @@ sync_rem_cruzer ()
     echo "syncing to cruzer ..."
 
     # Von SSH auf USB-Stick synchronisieren
-    rsync --progress -auve ssh --iconv=UTF-8,ISO8859-1 --exclude '^.' --exclude '*~' --delete "$SSH"/ "$USB/$SMTR/Bloomberg"/
+    rsync --progress -auve ssh --iconv=UTF-8,ISO8859-1 --exclude '^.' --exclude "*~" --delete "$SSH"/ "$USB/$SEM"/
 }
 
 # Harddrive to Cruzer {{{2
@@ -124,8 +124,8 @@ sync_loc_cruzer ()
 {
     # syncing folders
     echo "syncing to cruzer ..."
-    rsync --progress --delete-excluded --exclude '^.*' --exclude '*~' \
-        -avbu --delete --backup-dir=$TMPUNI "$UNIMAT/$SMTR"/ "$USB/$SMTR"/
+    rsync --progress --delete-excluded --exclude '^.' --exclude "*~" \
+        -avbu --delete --backup-dir=$TMPUNI "$UNIMAT/$SEM"/ "$USB/$SEM"/
 }
 
 # Cruzer zu Harddrive {{{2
@@ -133,16 +133,16 @@ sync_cruzer_loc ()
 {
     # syncing folders
     echo "syncing to harddrive ..."
-    rsync --progress --delete-excluded --exclude '^.*' --exclude '*~' \
-        -avbu --delete --backup-dir=$TMPUNI "$USB/$SMTR"/ "$UNIMAT/$SMTR"/
+    rsync --progress --exclude '^.*' --exclude '*~' \
+        -avbu --delete --backup-dir=$TMPUNI "$USB/$SEM"/ "$UNIMAT/$SEM"/
 
-    if [[ -d "$USB/$SMTRALT" ]]; then
-    rsync --progress --delete-excluded --exclude '^.*' --exclude '*~' \
-        -avbu --delete --backup-dir=$TMPUNI "$USB/$SMTRALT"/ "$UNIMAT/$SMTRALT"/
+    if [[ -d "$USB/$SEMALT" ]]; then
+    rsync --progress --exclude '^.*' --exclude '*~' \
+        -avbu --delete --backup-dir=$TMPUNI "$USB/$SEMALT"/ "$UNIMAT/$SEMALT"/
     fi
 
     # # creating html index
-    # for f in $(find $USB/$SMTR/Bloomberg/ -type d); do autoindex.sh $f | tee $f/index.html; done
+    # for f in $(find $USB/$SEM/ -type d); do autoindex.sh $f | tee $f/index.html; done
 }
 
 

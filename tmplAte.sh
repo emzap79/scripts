@@ -1,60 +1,52 @@
-#!/bin/bash#{{{
+#!/bin/bash                                             {{{1
 
 # vim:fdm=marker:set cb=unnamedplus
 #/* vim: set filetype=sh : */
 
-# Basics#{{{
+# Strings manipulieren                                  {{{1
+# http://stackoverflow.com/a/1853984/1483760
+# http://stackoverflow.com/a/9057392/1483760
+# http://wiki.bash-hackers.org/scripting/posparams#mass_usage
+# http://tldp.org/LDP/abs/html/string-manipulation.html
 
-# Schneiden und Zählen in Bash #{{{
-
-# Dateinamen abkürzen #{{{
+# Dateinamen abkürzen                                  {{{2
 
 FBN=`basename "$1" .mp3`
 NAME=${1%%.*}                             # Gibt nur den Songnamen der MP3 aus
 EXT=${1##*.}                              # Gibt nur das Format der File aus (e.g. mp3, ogg ...)
-dt=`date +%d%m%y`
+dt=`date +%d%m%y`                         # bspw. 311215 für den 31.12.2015
 echo "${dt:4:2}-${dt:2:2}-${dt:0:2}"      # wandelt string um in yyyy-mm-dd
 
-#}}}
-# Addieren, Subtrahieren etc #{{{
+# Addieren, Subtrahieren etc                            {{{2
 
 # http://askubuntu com/a/385532
-x=1; (( x++ )); echo $x #Addiert zu x=1 eine Zahl hinzu (=2)
+x=1; (( $x+1 )); echo $x #Addiert zu x=1 eine Zahl hinzu (=2)
 
-#}}}
-
-# Schneiden und Zählen in Bash #}}}
-# Bedeutung von Anführungszeichen #{{{
+# Bedeutung von Anführungszeichen                      {{{2
 
 VAR="aa            bb                  cc"
 echo $VAR           #aa bb cc
 echo "$VAR"         #aa            bb                  cc
 echo '$VAR'         #$VAR
 
-#}}}
-# Dateien und Ordner umbenennen#{{{
+# Dateien und Ordner umbenennen                         {{{1
 
-# Dotfiles umbenennen #{{{
+# Dotfiles umbenennen                                   {{{2
 
 # rename ~/ dotfiles
 echo "Cutting leading '.' off of dotfiles"
 find $dir -maxdepth 1 -name '.*' -print0 | xargs -r0 rename -v 's|/\.+([^/]+)$|/$1|'
 
-#}}}
-# Rename Downloaded Facebook-Images  # #{{{
+# Rename Downloaded Facebook-Images                   # {{{2
 
 numb=0; lst | tail -n 11 | awk '{print substr($0,52)}' | while read l; do (( numb++ )); mv $l $(printf %02d $numb)_fb.jpg; done
 
-#}}}
-
-# Dateien und Ordner umbenennen#}}}
-# Löschen leerer Ordner #{{{
+# Löschen leerer Ordner                                {{{2
 
 find $PATH -depth -type d -empty -exec rmdir -v -- {} \; #Löscht auch Ordner mit Umlauten und Leerzeichen
 find . -depth -type d -empty -exec rmdir -v -- {} \; #Löscht Ordner mit Umlauten und Leerzeichen in akt. Verz
 
-#}}}
-# AWK-Commands #{{{
+# AWK-Commands                                          {{{1
 
 awk '{print $5}'                        #gibt lediglich letzte Spalte aus
 awk '{for(i=1;i<8;i++) $i="";print}'    #gibt alle Spalten bis auf die erste aus
@@ -64,12 +56,7 @@ awk 'FNR == 1{print}'                   #output ist erste Zeile
 shopt -s nocasematch #Stellt System auf Case-Insensitive
 shopt -u nocasematch && shopt | grep nocasematch #Stellt System auf Case-Sensitive
 
-#}}}
-
-# Basics#}}}
-# Befehle für skripting#{{{
-
-# Checkt ob Skript gerade ausgeführt wird #{{{
+# Checkt ob Skript gerade ausgeführt wird              {{{1
 
 lf=/tmp/pidLockFile
 touch $lf
@@ -78,11 +65,8 @@ read lastPID < $lf
 echo not running
 echo $$ > $lf
 
-#}}}
-# Root-Passwort-Abfrage #{{{
-
-#}}}
-# check root #{{{
+# Root-Passwort-Abfrage                                 {{{1
+# check root                                            {{{2
 
 http://www.cyberciti.biz/faq/appleosx-bsd-shell-script-get-current-user/
 
@@ -97,14 +81,12 @@ fi
 ## show username
 echo `uid -un`
 
-#}}}
-# Alternative 1 #{{{
+# Alternative 1                                         {{{2
 
 gksudo "sh -c 'command1; command2; ...'"
 #http://stackoverflow com/questions/10470084/shell-script-how-can-i-use-gksudo-to-perform-consecutive-sudo-operations-with-o ##
 
-#}}}
-# Alternative 2 #{{{
+# Alternative 2                                         {{{2
 
 TITEL="foobar"
 
@@ -133,8 +115,7 @@ fi
 
 exit 0
 
-#}}}
-# Terminal Root-Abfrage #{{{
+# Terminal Root-Abfrage                                 {{{2
 
 read -p "Installer: Adminrechte werden benötigt. Wollen sie fortfahren (Y|n)? " answer
 case "$answer" in
@@ -154,26 +135,20 @@ esac
 #EOF
 exit 0
 
-#########################}}}
-
-# Befehle für skripting#}}}
-# Benachrichtigung ausgeben lassen#{{{
-
-# Notify-Send #{{{
+# Benachrichtigung ausgeben lassen                      {{{1
+# Notify-Send                                           {{{2
 
 export DISPLAY=:0  #Damit Notify-Send auch in Cron-gesteuerten Skripten arbeitet
 notify-send --hint=int:transient:1 Test #Lässt die Notify-Send-Benachrichtigung nach einiger Zeit aus dem Panel verschwinden
 
-#}}}
-# Zeilenumbruch für Benachrichtigung (notify-send) #{{{
+# Zeilenumbruch für Benachrichtigung (notify-send)     {{{2
 
 notify-send "Escape character for newline doesn't work" \
     "$(echo -e "This is the first line.\nAnd this is the second.")"
 
-#}}}
-# Zenity Abfrage #{{{
+# Zenity Abfrage                                        {{{2
 
-# Variante 1#{{{
+# Variante 1                                            {{{3
 
 zenity --question --title="BEISPIEL" --text="AKTION 1 ausführen?"
 if [ $? = 0 ];
@@ -183,14 +158,12 @@ else
     ABBRECHEN
 fi
 
-# Variante 1#}}}
-# Variante 2 #{{{
+# Variante 2                                            {{{3
 
 notify-send "Escape character for newline doesn't work" \
     "$(echo -e "This is the first line.\nAnd this is the second.")"
 
-#}}}
-# Variante 3 - Zenity #{{{
+# Variante 3 - Zenity                                   {{{3
 
 exec 3> >(zenity --notification --listen)
 echo "message:Daten erfolgreich abgeglichen\n... kannst den Stick jetzt aushängen!" >&3
@@ -201,33 +174,25 @@ zenity=$(which zenity --question)
 zenityQuestion=$($zenity --entry --text "text" --title="TITLE")
 selFile=`zenity --title="Select Desired File" --file-selection`
 
-#}}}
-
-# Zenity Abfrage #}}}
-
-# Benachrichtigung ausgeben lassen#}}}
-# If & While#{{{
-
-# If Condition #{{{
+# If & While                                            {{{1
+# If Condition                                          {{{2
 
 #http://anwendungsentwickler ws/index php?id=483
 #Hier mal ein Beispiel wie man in der Linux Bash mehrere Bedingungen in einem if-Statement abfragen kann  Das ganze sieht ein wenig anders aus als in einer "normalen" Programmiersprache
 
-# If-Condition: Und #{{{
+# If-Condition: Und                                     {{{3
 
 if [ "$SHELL" == "/bin/bash" ] && [ "$USER" == "sim4000" ]; then
 echo "User und Shell sind richtig";
 fi
 
-#}}}
-# If-Condition: Oder #{{{
+# If-Condition: Oder                                    {{{3
 
 if [ "$SHELL" == "/bin/bash" ] || [ "$USER" == "sim4000" ]; then
 echo "User oder Shell sind richtig";
 fi
 
-#}}}
-# If-Condition: UND / ODER #{{{
+# If-Condition: UND / ODER                              {{{3
 
 if ( [ "$a" == "a" ] || [ "$a" == "b" ] ) && ( [ "$b" == "c" ] ); then
 echo "moo";
@@ -247,17 +212,12 @@ else
     echo "do nothing"
 fi
 
-#}}}
-
-# If Condition #}}}
-# While-Schleifen #{{{
-
-# Internal Field Seperator (IFS) #{{{
+# While-Schleifen                                       {{{2
+# Internal Field Seperator (IFS)                        {{{1
 
 read -p "Gib eine beliebige Anzahl an Worten ein: " word
 var=$(printf "%s\n" $word)
 sfi=$IFS
-
 cat $1 |\
 while IFS=':' read a b c d
 do
@@ -268,8 +228,7 @@ do
 done
 IFS=$sfi
 
-#}}}
-# Variante 1 #{{{
+# Variante 1                                            {{{2
 
 numb=0
 while read -r line
@@ -279,8 +238,7 @@ do
 done < "$var"
 echo "Zaehler nach der Schleife: $numb"
 
-#}}}
-# Variante 2 #{{{
+# Variante 2                                            {{{2
 
 echo "Frage: Was ergibt 2 + 2"
 echo ""
@@ -296,8 +254,7 @@ do
     esac
 done
 
-#}}}
-# Skript ausführen bis beliebige Taste gedrückt wird #{{{
+# Skript ausführen bis beliebige Taste gedrückt wird  {{{1
 
 if [ -t 0 ]; then stty -echo -icanon time 0 min 0; fi
 
@@ -314,15 +271,13 @@ if [ -t 0 ]; then stty sane; fi
 echo "You pressed '$keypress' after $count loop iterations"
 echo "Thanks for using this script."
 
-#}}}
-# Countdown Anzeige  #{{{
+# Countdown Anzeige                                     {{{1
 
-# Variante 1 #{{{
+# Variante 1                                            {{{2
 
 for i in {10..1};do echo $i && sleep 0.2; done
 
-#}}}
-# Variante 2 #{{{
+# Variante 2                                            {{{2
 
 countdown()
 {
@@ -339,8 +294,7 @@ countdown()
 } 2>/dev/null
 countdown
 
-#}}}
-# Variante 3 - ausführlich #{{{
+# Variante 3 - ausführlich                             {{{2
 
 if [ "$#" -lt "2" ] ; then
     echo "Incorrect usage ! Example:"
@@ -394,8 +348,7 @@ if [ "$1" = "-d" ] ; then
                 sleep 1
             done
 
-#}}}
-# Variante 4 #{{{
+# Variante 4                                            {{{2
 
 function countdown
 {
@@ -422,22 +375,15 @@ function countdown
 }
 countdown "00:07:55"
 
-#}}}
-# Dialoge #{{{
-
-#}}}
-#  #{{{
-
-#}}}
-# Variante 1 #{{{
+# Dialoge                                               {{{1
+# Variante 1                                            {{{2
 
 read -p "Are you sure? " -n 1 -r
 if [[ $REPLY =~ ^[Yy]$ ]]; then
 echo "do dangerous stuff"
 fi
 
-#}}}
-# Variante 2 #{{{
+# Variante 2                                            {{{2
 
 read -p "Willst du antworten (Y|n)? " answer
 case "$answer" in
@@ -454,8 +400,7 @@ No|no|N|n)
         ;;
 esac
 
-#}}}
-# Variante 3 # While-Loop #{{{
+# Variante 3 # While-Loop                               {{{2
 
 done=0
 while [ "x${done}" = x0 ];
@@ -473,8 +418,7 @@ else
 fi
 done
 
-#}}}
-# Convert Images #{{{
+# Convert Images                                        {{{1
 
 # loops
 ## convert images
@@ -486,8 +430,7 @@ for i in $(find . -type f -exec file {} \; | grep -o -P '^.+: \w+ image' | sed '
 # for i in * GIF * gif; do animate $i; done
 # for i in * PDF * pdf; do evince $i; done
 
-#}}}
-# Internet Verbindung überprüfen #{{{
+# Internet Verbindung überprüfen                      {{{1
 
 testconnection=`wget --tries=3 --timeout=15 www.google.com -O /tmp/.testinternet &>/dev/null 2>&1`
 if [[ $? != 0 ]]; then
@@ -498,18 +441,14 @@ else
     echo Internetverbindung - ok
     rm /tmp/.testinternet  > /dev/null 2>&1
 
-#}}}
 fi
 
-#}}}
-
-# While-Schleifen #}}}
-# Auswahlmenü mit Select #{{{
+# Auswahlmenü mit Select                               {{{1
 
 # There are several ways to make a select-menue work  Please note the specific
 # use of arrays: array[*], array[@] or "array[@]" is all different!
 
-# Variante 1 #{{{
+# Variante 1                                            {{{2
 
 echo "Enter the number of the file you want to select:"
 select FILENAME in *;
@@ -517,8 +456,7 @@ do
     echo "You picked $FILENAME ($REPLY)"
 done
 
-#}}}
-# Variante 2 #{{{
+# Variante 2                                            {{{2
 
 selTitle=":: Beispielauswahl ::"
 selPrompt="Wähle eine der Optionen:"
@@ -546,8 +484,7 @@ done
 #Script will loop until the user explicitly chooses Quit  This is a good approach for interactive script menus: after a choice is selected and action performed, menu is presented again for another choice  If choice is meant to be one-time only, just use break after esac
 #PS3 and REPLY vars can not be renamed  select is hardcoded to use those  All other variables in script (opt, options, prompt, title) can have any names you want, provided you do the adjustments[#
 
-#}}}
-# Variante 3 #{{{
+# Variante 3                                            {{{2
 
 selTitle=":: Auswahlmenue ::"
 selPrompt="Wähle eine der Optionen: "
@@ -572,21 +509,14 @@ do
 	break
 done
 
-#}}}
-
-# Auswahlmenü mit Select #}}}
-
-# If & While#}}}
-# Hardwareinformationen#{{{
-
-# Programme nachinstallieren #{{{
+# Hardwareinformationen                                 {{{1
+# Programme nachinstallieren                            {{{2
 
 if [ $(dpkg-query --show | grep "NAME" | wc -l) = 0 ];
 then yes y | sudo apt-get install NAME;
 fi
 
-#}}}
-# Externe Festplatten überprüfen #{{{
+# Externe Festplatten überprüfen                      {{{2
 
 case "0" in
     $chkDiscWD|$chkDiscVOL)
@@ -598,50 +528,44 @@ case "0" in
         ;;
 esac
 
-#}}}
-# Mounting Hard-Drives #{{{
+# Mounting Hard-Drives                                  {{{2
 
 #Mountet die Festplatte WDP mit Zugriffsrechten
 sudo mount -t vfat UUID=$UUID $WDP -o uid=1000,gid=100,dmask=027,fmask=137
 
-#}}}
-# Check mounted Drives #{{{
+# Check mounted Drives                                  {{{2
 
 chkDiscWD=`ls -l /dev/disk/by-uuid | grep 5338-AB62 | wc -l` #WD-Passport
 chkRSYNC=`ps -aef | grep -v grep | grep rsync | wc -l`
 chkMOUNT=`df -h | awk '{print $6}' | grep $BACKUP_DIR_MEDIA | wc -l`
 
-#}}}
-# Checking if Computer runs on Battery-Mode #{{{
+# Checking if Computer runs on Battery-Mode             {{{2
 
 chkPower=$(acpi -a | awk '{print $3}' | cut -d '-' -f 1)
 
-#}}}
-# Alte Kernel-Versionen Löschen #{{{
+# Alte Kernel-Versionen Löschen                        {{{2
 
 dpkg -l 'linux-*' | sed '/^ii/!d;/'"$(uname -r | sed "s/\(.*\)-\([^0-9]\+\)/\1/")"'/d;s/^[^ ]* [^ ]* \([^ ]*\).*/\1/;/[0-9]/!d' | xargs sudo apt-get -y purge
 
-#}}}
+# Other Stuff                                           {{{1
 
-# Hardwareinformationen#}}}
-# Other Stuff#{{{
-
-# Playing Sounds #{{{
+# Playing Sounds                                        {{{2
 
 play /usr/share/sounds/gnome/default/alerts/glass.ogg repeat 2 #Sound abspielen
 
-#}}}
-# Extract JPGs from PDF #{{{
+# Extract JPGs from PDF                                 {{{2
 
 egrep '\.jpg' *.html | egrep http | sed 's/^.*\(http.*\)/\1/g;s/\.jpg.*$/\.jpg/g' > urls.txt
 
-#}}}
-# LibreOffice konvertierung zu Latex #{{{
+# LibreOffice konvertierung zu Latex                    {{{2
 
 w2l IN.odt
 
-#}}}
-# Zufallszahl ausgeben lassen #{{{
+# LibreOffice switch off recoverage of old documents    {{{2
+
+rm /home/zapata/.config/libreoffice/4/user/registrymodifications.xcu
+
+# Zufallszahl ausgeben lassen                           {{{2
 
 n=$RANDOM
 # display a random integer <= 200
@@ -649,8 +573,7 @@ echo $(( r %= 200 ))
 # display random number between 100 and 200
 echo $((RANDOM%200+100))
 
-#}}}
-# CSV dateien anpassen#{{{
+# CSV dateien anpassen                                  {{{2
 
 IFILE="./infile.csv"
 OFILE="${IFILE%%.*}_edited.csv"
@@ -663,9 +586,3 @@ do
     echo "$date;$total;$spot;$index;$period"
 done < $IFILE > $OFILE
 IFS="$sfi"
-
-# CSV dateien anpassen#}}}
-
-# Other Stuff#}}}
-
-#!/bin/bash#}}}

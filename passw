@@ -1,27 +1,66 @@
 #!/bin/bash
 
-### Erneutes Generieren eines Passworts ###
-###########################################
+pssw ()
+{
+    case $1 in
+        regular|initiate )
+            echo -n `< /dev/urandom tr -dc A-Z-a-z-0-9 | head -c8` | xclip
+            xclip -o
+            case $1 in
+                regular )
+                    abfrage regular
+                    ;;
+                initiate )
+                    abfrage initiate
+                    ;;
+            esac
+            ;;
+        extended )
+            echo -n `< /dev/urandom tr -dc \!\@\#\$\%\&_^A-Z-a-z-0-9 | head -c $chars` | xclip     # echo-option (-n) prevents from printing newline
+            xclip -o
+            abfrage extended
+            ;;
+    esac
+}
+
+# Erneutes Generieren eines Passworts
 abfrage ()
 {
     echo ""
-    read -p "Möchtest du dieses Passwort verwenden? (y|N)? " answer
+    read -p "Möchtest du dieses Passwort verwenden? (y|N) " answer
+
     case "$answer" in
         Yes|yes|Y|y)
             xclip -o | xclip -selection c
             echo "Passwort im Clipboard gespeichert!"
             ;;
         No|no|N|n|"")
-            pssw
+            case $1 in
+                initiate)
+                    read -p "Sollen Sonderzeichen mit einbezogen werden? (Y|n) " answer
+                    case "$answer" in
+                        Yes|yes|Y|y|"")
+                            read -p "Wieviele Zeichen soll das PW enthalten? [default: 8] " chars
+                            if [[ $chars = "" ]]; then
+                                chars=8
+                            fi
+                            pssw extended
+                            ;;
+                        No|no|N|n)
+                            pssw regular
+                            ;;
+                    esac
+                    ;;
+                extended )
+                    pssw extended
+                    ;;
+                regular )
+                    pssw regular
+            esac
             ;;
     esac
+
 }
 
-pssw ()
-{
-    echo -n `< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c8` | xclip     # echo-option (-n) prevents from printing newline
-    xclip -o
-    abfrage
-}
-pssw
+pssw initiate
 exit 0

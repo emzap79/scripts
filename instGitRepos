@@ -1,10 +1,8 @@
 # vim:fdm=marker:
 
 #!/bin/bash
-#.#################################
-#.#.Installing Programs from GitHub
-#.#################################
-# checking for root permissions.# {{{
+# Installing Programs from GitHub   {{{1
+# checking for root permissions.    {{{2
 
 if [[ `id -u` -ne 0 ]]; then
     echo ""
@@ -14,12 +12,12 @@ if [[ `id -u` -ne 0 ]]; then
     exit 1
 fi
 
-###.Checking for Root Permissions.# }}}
-# change to temporary directory.# {{{
+
+# change to temporary directory.    {{{2
 sudo -u $USER mkdir -p $HOME/tmp/gitrepos/
 sudo -u $USER cd $HOME/tmp/gitrepos/
-###.Change to temporary directory.# }}}
-# install dependencies.# {{{
+
+# install dependencies.             {{{2
 
 yes y | apt-get install git
 yes y | apt-get install git-core
@@ -29,14 +27,14 @@ yes y | apt-get install gnome-control-center-dev
 yes y | apt-get install python-gconf
 yes y | apt-get install gawk
 
-###.Install Dependencies.# }}}
-# install google translator cli.# {{{
+
+# install google translator cli.    {{{2
 # http://www.techdrivein.com/2014/03/google-translate-in-your-terminal-oh-yes.html
 sudo -u $USER git clone git://github.com/soimort/google-translate-cli.git
 sudo -u $USER cd google-translate-cli
 sudo -u $USER make install
-###.Install Google Translator Cli.# }}}
-# install hamster applet.# {{{
+
+# install hamster applet.           {{{2
 yes y | apt-get purge hamster-applet
 sudo -u $USER mkdir -p $HOME/.hamster-applet/
 sudo -u $USER cd $HOME/.hamster-applet
@@ -46,15 +44,18 @@ sudo -u $USER cd $HOME/.hamster-applet/hamster
 ./waf install
 killall hamster-service & killall hamster-windows-service
 
-###.install hamster applet.# }}}
-# install pms-youtube viewer#{{{
+
+# install pms-youtube viewer        {{{2
 apt-get install pip
 pip install pms-youtube
-#}}}
-# install fuzzyfinder# {{{
+
+# install xlrd (excel.vim plugin) {{{2
+pip install xlrd
+
+# install fuzzyfinder               {{{2
 
 git clone https://github.com/junegunn/fzf.git ~/.fzf
 ~/.fzf/install
 
-# install fuzzyfinder# }}}
+
 

@@ -21,11 +21,12 @@ set -o nounset                              # Treat unset variables as an error
 
 # ### Variablen setzen   {{{1
 read -ep "Wie soll die PDF-File nach dem Einscannen heißen? " NAME
-NAME="${NAME%%.}"*.pdf
+NAME="${NAME%%.*}".pdf
 
-cd $HOME/Unimaterialien
-read -ep "Gib das Zielverzeichnis für die Mitschrift an: $HOME/Unimaterialien/" OUTDIR
+read -ep "Gib das Zielverzeichnis für die Mitschrift an: /tmp/" OUTDIR
 read -ep "Soll das PDF anschließend in Grayscale umgewandelt werden (Y/n)? " answer
+mkdir -p /tmp/$OUTDIR
+
 # ### Funktionen         {{{1
 scan_image ()
 {
@@ -45,7 +46,7 @@ conv_to_graysc ()
 conv_to_pdf ()
 {
     for i in $IMAGES/scanned_image*.pnm; do sam2p -pdf:2 "$i" $IMAGES/$(basename $i .pnm).pdf; done
-    pdftk $IMAGES/scanned_image*.pdf cat output "$OUTDIR/$NAME"
+    pdftk $IMAGES/*.pdf cat output "$OUTDIR/$NAME"
 
     # echo ""
     # echo "resize with ghostscript"
@@ -73,8 +74,11 @@ case $answer in
         ;;
     No|no|N|n)
         IMAGES="/tmp/scan/color"
-        if test -d $IMAGES; then rm -r $IMAGES; fi
+        if test -d $IMAGES; then rm -rf $IMAGES; fi
         scan_image
         ;;
 esac
 conv_to_pdf
+# #############
+# ### EOF
+# #############
