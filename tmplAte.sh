@@ -12,15 +12,15 @@
 # Dateinamen abkürzen                                  {{{2
 
 FBN=`basename "$1" .mp3`
-NAME=${1%%.*}                             # Gibt nur den Songnamen der MP3 aus
-EXT=${1##*.}                              # Gibt nur das Format der File aus (e.g. mp3, ogg ...)
+BNM=${1%%.*}                              # Gibt nur den Songnamen der MP3 aus
+EXT=${1##*.}                              # Gibt nur das Suffix der File aus (e.g. mp3, ogg ...)
 dt=`date +%d%m%y`                         # bspw. 311215 für den 31.12.2015
 echo "${dt:4:2}-${dt:2:2}-${dt:0:2}"      # wandelt string um in yyyy-mm-dd
 
 # Addieren, Subtrahieren etc                            {{{2
 
 # http://askubuntu com/a/385532
-x=1; (( $x+1 )); echo $x #Addiert zu x=1 eine Zahl hinzu (=2)
+x=1; $(( $x+1 )); echo $x #Addiert zu x=1 eine Zahl hinzu (=2)
 
 # Bedeutung von Anführungszeichen                      {{{2
 
@@ -29,15 +29,41 @@ echo $VAR           #aa bb cc
 echo "$VAR"         #aa            bb                  cc
 echo '$VAR'         #$VAR
 
-# Dateien und Ordner umbenennen                         {{{1
+# Variablen in Bash                                     {{{2
+# http://stackoverflow.com/a/5163260
+# http://stackoverflow.com/a/1854031
+$1, $2, $3, ... # are the positional parameters.
+"$@" # is an array-like construct of all positional parameters, {$1, $2, $3 ...}.
+"$*" # is the IFS expansion of all positional parameters, $1 $2 $3 ....
+$#   # is the number of positional parameters.
+$-   # current options set for the shell.
+$$   # pid of the current shell (not subshell).
+$_   # most recent parameter (or the abs path of the command to start the current
+     # shell immediately after startup).
+$IFS # is the (input) field separator.
+$?   # is the most recent foreground pipeline exit status.
+$!   # is the PID of the most recent background command.
+$0   # is the name of the shell or shell script.
+"${@: -1}"  # last position parameter
 
+# To get the last variable we need a little bit of extra hack
+eval last=\${$#}
+echo $last
+
+# Most of the above can be found under Special Parameters in the Bash
+# Reference Manual. There are all the environment variables set by the
+# shell.
+
+# For a comprehensive index, please see the Reference Manual Variable Index.
+
+# Dateien und Ordner umbenennen                         {{{1
 # Dotfiles umbenennen                                   {{{2
 
 # rename ~/ dotfiles
 echo "Cutting leading '.' off of dotfiles"
 find $dir -maxdepth 1 -name '.*' -print0 | xargs -r0 rename -v 's|/\.+([^/]+)$|/$1|'
 
-# Rename Downloaded Facebook-Images                   # {{{2
+# Rename Downloaded Facebook-Images                     {{{2
 
 numb=0; lst | tail -n 11 | awk '{print substr($0,52)}' | while read l; do (( numb++ )); mv $l $(printf %02d $numb)_fb.jpg; done
 
@@ -481,8 +507,13 @@ select opt in "${selOptions[@]}" "Quit"; do
             ;;
     esac; break #Ohne die Option Break wird die Abfrage wiederholt!
 done
-#Script will loop until the user explicitly chooses Quit  This is a good approach for interactive script menus: after a choice is selected and action performed, menu is presented again for another choice  If choice is meant to be one-time only, just use break after esac
-#PS3 and REPLY vars can not be renamed  select is hardcoded to use those  All other variables in script (opt, options, prompt, title) can have any names you want, provided you do the adjustments[#
+# Script will loop until the user explicitly chooses Quit  This is a good
+# approach for interactive script menus: after a choice is selected and action
+# performed, menu is presented again for another choice  If choice is meant to
+# be one-time only, just use break after esac PS3 and REPLY vars can not be
+# renamed  select is hardcoded to use those  All other variables in script
+# (opt, options, prompt, title) can have any names you want, provided you do
+# the adjustments[#
 
 # Variante 3                                            {{{2
 

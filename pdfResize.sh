@@ -3,8 +3,10 @@
 
 # Configuration                   {{{1
 # Define inputfile                {{{2
-TMPDIR=`mktemp -d /tmp/frames.XXXXXXXX` || exit 1
+# TMPDIR=`mktemp -d /tmp/frames.XXXXXXXX` || exit 1
+TMPDIR=`mktemp -d /tmp/framesXXXXXXXX` || exit 1
 size_old=$(ls -s "$1" | cut -d ' ' -f 1)
+size_old_hs=$(ls -hs "$1" | cut -d ' ' -f 1)
 inputfile="$1"
 if [ "$1" = "" ]; then
     echo "usage: $0 name_of_file.pdf"
@@ -153,49 +155,65 @@ size_new_hs="$(ls -hs $output3_resize | cut -d ' ' -f 1)"
 
 # Resizing PDF #2                 {{{2
 if [ $size_old -le $size_new ]; then
+    if [[ ! -f $input0_resize ]]; then
+        input0_resize=$inputfile
+    fi
     echo "start second intent ... "
     output4_resize="$TMPDIR/postscript_out".ps
     output5_resize="$TMPDIR/pdfres_out_resized_ps2pdf".pdf
 
-    pdftops $inputfile $output4_resize
+    pdftops $input0_resize $output4_resize
     ps2pdf $output4_resize $output5_resize
     size_new=$(ls -s $output5_resize | cut -d ' ' -f 1)
     size_new_hs=$(ls -hs $output5_resize | cut -d ' ' -f 1)
 fi
 
 # Resizing PDF #3                 {{{2
+# size_new=$size_old
 if [ $size_old -le $size_new ]; then
+    if [[ ! -f $input0_resize ]]; then
+        input0_resize=$inputfile
+    fi
     ppmout="$TMPDIR/${inputfile%%.*}"
     output6_resize="$TMPDIR/pdfres_out_resized_ppm_images".pdf
     pdfimages $inputfile $ppmout
-    for i in "$TMPDIR/$ppmout*".ppm
+    for i in $TMPDIR/*.ppm
     do
-        mogrify -resize 45% $i
-        sam2p -pdf:2 $i "$TMPDIR/$(basename $i .ppm)".pdf
-        pdftk $TMPDIR/$ppmout*.pdf cat output $output6_resize # $TMPDIR/$ppmout%03d.png
+        mogrify -resize 40% "$i"
+        sam2p -pdf:2 $i $TMPDIR/$(basename "$i" .ppm).pdf
     done
+    pdftk $TMPDIR/$(basename "$inputfile" .pdf)*.pdf cat output $output6_resize # $TMPDIR/$ppmout%03d.png
 fi
+size_new=$(ls -s $output6_resize | cut -d ' ' -f 1)
+size_new_hs=$(ls -hs $output6_resize | cut -d ' ' -f 1)
 
 # Final Output                    {{{1
 # Define Final Output File        {{{2
 if [ -f $output6_resize ];then output_final=$output6_resize
+    echo "final result is $output_final"
 elif [ -f $output5_resize ];then output_final=$output5_resize
+    echo "final result is $output_final"
 elif [ -f $output3_resize ];then output_final=$output3_resize
+    echo "final result is $output_final"
 elif [ -f $output2_grayscale ];then output_final=$output2_grayscale
+    echo "final result is $output_final"
 elif [ -f $output1_format_a4 ];then output_final=$output1_format_a4
+    echo "final result is $output_final"
 fi
 
 # Filesize To Human Readability   {{{2
 
 if [ $size_old -le $size_new ]; then
     echo "sorry, couldn't resize $inputfile"
-    rm -rfv $TMPDIR
+    rm -rf $TMPDIR
     exit 1;
 else
-    echo "new size $size_new_hs old size $size_old_hr"
-    mv -v $output_final ./"${inputfile%%.*}_resized".pdf
+    output_pdf="./${inputfile%%.*}_resized".pdf
+    echo "new size $size_new_hs old size $size_old_hs"
+    mv -v "$output_final"
     echo ""
-    echo "`basename $1`... resized from $size_old to $size_new bites (~ $size_new_hs mb)!"
+    echo "`basename $1`... resized from $size_old to $size_new bites (~ $size_new_hs mb)"
+    evince "$output_pdf" &
 fi
 
 # Annotations                     {{{2

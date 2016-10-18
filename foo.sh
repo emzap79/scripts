@@ -1,15 +1,26 @@
 #!/bin/sh
-size_new_hr
+# http://ryanbrooks.co.uk/posts/2015-09-05-imagemagick-circular-avatars/
 
-echo $size_new | awk 'function human(x) {
-x=x*1000
-s=" B   KiB MiB GiB TiB EiB PiB YiB ZiB"
-while (x>=1024 && length(s)>1)
-    {x/=1024; s=substr(s,5)}
-    s=substr(s,1,4)
-    xf=(s==" B  ")?"%5d   ":"%8.2f"
-    return sprintf( xf"%s\n", x, s)
-}
-{gsub(/^[0-9]+/, human($1)); print}' 
+EXT=${2##*.}                              # Gibt nur das Suffix der File aus (e.g. mp3, ogg ...)
+BNM="$(basename $2 .$EXT)"
 
-    echo $size_new_hr
+case $1 in
+    avatar)
+        convert $2 \
+            -resize x800 -resize '800x<'   -resize 50% \
+            -gravity center -crop 400x400+0+0 +repage \
+            \( +clone -threshold -1 -negate -fill white -draw "circle 200,200 200,0" \) \
+            -alpha off -compose copy_opacity -composite \
+            \-auto-orient \
+            cropped_"$BNM".png
+        ;;
+    shadow)
+        convert -page +4+4 $2 -alpha set \
+            \( +clone -background navy -shadow 60x4+4+4 \) +swap \
+            -background none -mosaic \
+            shadow_"$BNM".png
+        ;;
+    *)
+        echo "usage: $0 [avatar|shadow] image.suffix"
+        ;;
+esac
