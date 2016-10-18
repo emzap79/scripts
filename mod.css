@@ -1,5 +1,0 @@
-body {visibility:hidden;background:none;width:100%;padding:0;margin:0;}
-table, tr, td{padding:0;margin:0; width:auto;}
-div.main, .box {visibility:visible;margin:0;padding:0;width:100%;}
-.box {border:none; margin-top:-100; padding-bottom:50px;}
-dd {display:none;}

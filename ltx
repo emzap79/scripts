@@ -1,6 +1,0 @@
-#!/bin/bash - 
-set -o nounset                              # Treat unset variables as an error
-
-pdflatex "$1"; evince "$(basename $1 .tex).pdf" &
-
-

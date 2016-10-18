@@ -1,5 +1,0 @@
-#!/bin/sh
-target=/tmp/imageprint-$$.ps
-convert -page A4 $1 "$target"
-lpr "$target"
-rm "$target"

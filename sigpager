@@ -1,5 +1,0 @@
-#!/usr/bin/python
-# $Id$
-
-from muttils import sigpagercommand
-sigpagercommand.run()
