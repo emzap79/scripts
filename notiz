@@ -1,0 +1,49 @@
+#!/bin/bash
+# Erinnert dich an wichtige Aufgaben
+
+# ###########################
+# Nachinstallation: Zenity
+# ###########################
+if [ $(dpkg-query --show | grep zenity | wc -l) = 0 ];
+then
+    echo "Das Programm Zenity muss nachinstalliert werden"
+    sleep 1
+    echo "Bitte Root Passwort eingeben "
+    yes | sudo apt-get install zenity #Mit 'yes' werden alle nachfolgenden
+    #Fragen mit 'ja' beantwortet. Kann für Skripte sehr hilfreich sein, ist
+    #aber mit vorsicht zu genießen xD
+fi
+
+# ###########################
+# Skript
+# ###########################
+ZENITY=$(which zenity --question)
+
+if [ "$1" = "" ]; then
+    # Abfrage mit Zenity
+    TEXT=$($ZENITY --entry --text "Woran soll ich dich erinnern\?" --title="Zu Erledigen")
+    if [ $? = 1 ];then
+        echo "Dann denk wenigstens selber dran ;-)"
+        exit 0  # Falls Abbruch (0 = Ok, 1 = Fehler), Skript beenden
+    fi
+    DELAY=$($ZENITY --entry --text "In wieviel Minuten soll ich dich daran erinnern\?\n120 = 2h\n180 = 3h\n240 = 4h\n300 = 5h\n360 = 6h" --title="Zu Erledigen")
+else
+    TEXT="$@"
+    echo -e "In wieviel Minuten soll ich dich daran erinnern?\n120 = 2h\n180 = 3h\n240 = 4h\n300 = 5h\n360 = 6h"
+    read -p "? " DELAY
+fi
+
+# ###########################
+# Erinnerung
+# ###########################
+notify-send "OK... Du wirst in "$DELAY" Minute(n) von mir erinnert!"
+sleep "$DELAY"m
+play /usr/share/sounds/gnome/default/alerts/drip.ogg repeat 1 #Diese Zeile musst
+#du evtl. anpassen. Die Alerts findest du bei dir auf dem Rechner hiermit:
+#sudo updatedb; locate -i *.ogg; egrep -v home
+# #updatedb - datenbank für den befehl locate neu laden
+# #locate -i - findet suchbegriff auf der festplatte (-i: case insensitive)
+# #egrep -v - schließt pfadnamen aus, die sich auf den Home-Ordner beziehen
+
+/usr/bin/zenity --warning --title \:\:\ Erinnerung\ \:\: --text "$TEXT"
+notify-send "$TEXT"

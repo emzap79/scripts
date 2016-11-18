@@ -69,7 +69,7 @@ fun_display(){
 
 fun_transp 3 # white-tolerance in %
 # fun_reflect
-# fun_reflect_altern 50 100 # ramp, fade
+fun_reflect_altern 50 100 # ramp, fade
 fun_add_shadow
 fun_display $tmpfile    # $outfile
 file $outfile

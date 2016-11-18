@@ -1,0 +1,48 @@
+#!/bin/bash
+
+######################################################
+########### Konfiguration ############################
+######################################################
+chkWuala=`ps -aef | grep -v grep | grep \/usr\/bin\/wuala | wc -l`
+chkPower=$(acpi -a | awk '{print $3}' | cut -d '-' -f 1)
+######################################################
+######################################################
+
+testWuala()
+{
+if [[ $chkWuala != 0 ]]; then exit 1; fi
+if [[ $chkPower != "on" ]]; then exit 1; fi
+chkConnect
+}
+
+#check if the user has an active internet connection
+function chkConnect {
+    sleep 10
+	testconnection=`wget --tries=3 --timeout=15 www.google.com -O /tmp/.testinternet &>/dev/null 2>&1`
+	if [[ $? != 0 ]]; then
+    	exec 3> >(zenity --notification --listen)
+    	echo "message:You are not connected to the Internet. Please check your Internet connection and try again." >&3
+    		exit 0
+	else
+		echo Internet connection - ok
+		rm /tmp/.testinternet  > /dev/null 2>&1
+        run_wuala
+	fi
+}
+
+
+function run_wuala {
+# Run Wuala with no GUI
+wuala -nogui &
+ 
+# Give Wuala some time to initialize
+sleep 30
+ 
+# Login
+wuala login Zapata1879 fvaj1M8c
+
+}
+
+#Start
+testWuala
+exit 0

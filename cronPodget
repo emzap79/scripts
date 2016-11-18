@@ -1,0 +1,56 @@
+#!/bin/bash
+
+########### Konfiguration ############################
+LOG="$HOME/.logfiles"
+chkProg=`ps -aef | grep -v grep | grep \/usr\/bin\/podget | wc -l`
+chkPower=$(acpi -a | awk '{print $3}' | cut -d '-' -f 1)
+lockfile_old=$(basename $HOME/.logfiles/*podget.lock)
+lockfile_glob="$(ls $LOG | egrep [[:digit:]]{8}.lock)"
+PODC="$HOME/Podcasts"
+
+chk_if_already_executed () {
+    # Lockfile löschen falls älter als ein tag
+    if [[ -f "$LOG/$lockfile_old" ]]; then
+        if [[ "$LOG/$lockfile_old" -ot "$LOG/$lockfile_glob" ]]; then
+            rm -v $LOG/*.podget.lock
+        else
+            # Skript beenden
+            echo "Du hast die neuesten Pods heute bereits heruntergeladen!"
+            exit 1
+        fi
+    else
+            # Neue Lockfile anlegen
+            touch "$LOG/`date +%Y%m%d`.podget.lock"
+    fi
+
+}
+
+chk_if_running () {
+if [[ $chkProg != 0 ]]; then exit 1; fi
+if [[ $chkPower != "on" ]]; then exit 1; fi
+}
+
+# check if the user has an active internet connection
+chk_conn () {
+    testconnection=`wget --tries=3 --timeout=15 www.google.com -O /tmp/.testinternet &>/dev/null 2>&1`
+    if [[ $? != 0 ]]; then
+        exec 3> >(zenity --notification --listen)
+        echo "message:You are not connected to the Internet. Please check your Internet connection and try again." >&3
+        exit 0
+    else
+        echo Internet connection - ok
+        rm /tmp/.testinternet  > /dev/null 2>&1
+    fi
+}
+
+run_prog () {
+/usr/bin/podget --cleanup_days 15
+rm $PODC/Music/*.m3u
+#/usr/bin/podget -s --cleanup_days 31 >> /dev/null 2>&1
+}
+
+# ### Start
+chk_if_already_executed
+chk_if_running
+chk_conn
+run_prog

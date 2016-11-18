@@ -1,0 +1,60 @@
+#!/bin/bash
+#
+#.################
+#.#.Check.for.Root
+#.################
+if [[ `id -u` -ne 0 ]]; then
+    echo ""
+    echo "hi `id -un`!"
+    echo "please reenter as root"
+    echo ""
+    exit 1
+fi
+
+APP=/usr/share/applications
+APP_loc=$HOME/.local/share/applications
+VOL=/media/zapata/Volume
+
+# ###########################
+# ## Postfix installieren
+# ###########################
+sudo -u $USER echo ""
+sudo -u $USER echo "Postfix wird installiert:"
+sudo -u $USER echo "Als Konfiguration muss 'locale' verwendet werden, alle"
+sudo -u $USER read -p "weiteren müssen beibehalten werden. [ENTER] "
+yes y | apt-get install postfix
+dpkg-reconfigure postfix
+
+# ###########################
+# ## Mutt installieren
+# ###########################
+sudo -u $USER echo "Mutt wird installiert."; sleep 1
+yes y | apt-get install mutt
+sudo -u $USER mv -v $APP/evolution.desktop $APP/evolution.desktop.bkp
+
+# ###########################
+# ## Zusätzliche Funktionen
+# ###########################
+yes y | apt-get install muttprint      # Mails schön lesbar ausdrucken.
+yes y | apt-get install fetchmail      # Pop-Accounts abrufen
+#yes y | apt-get install procmail       # Filter-Rules für POP3-Nachrichten
+yes y | apt-get install msmtp-gnome    # Versenden von Mails über die Kommandozeile
+yes y | apt-get install mairix         # Erweiterte Suchmaske für mails (für mboxes)
+yes y | apt-get install grepmail       # Erweiterte Suchmaske für mails
+
+#.#######################
+#.##.Ripmime.installieren
+#.#######################
+# Ripmime.installieren.#{{{
+sudo -u $USER wget http://pldaniels.com/ripmime/ripmime-1.4.0.10.tar.gz -o /tmp/
+cd /tmp/ripmime/
+make
+make install
+###.Ripmime.installieren.#}}}
+
+# Spamassassin einrichten
+yes y | apt-get install spamassassin   # Spamdetector
+yes y | apt-get install razor          # Spam-Messages melden
+yes y | apt-get install pyzor
+sed -i 's/ENABLED=0/ENABLED=1/g' /etc/default/spamassassin
+/etc/init.d/spamassassin start         # SA-Daemno-starten

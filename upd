@@ -1,0 +1,6 @@
+#!/bin/bash
+
+sudo apt-get update
+yes y | sudo apt-get upgrade
+sudo dpkg --clear-selections
+notify-send "Quellen upgedatet!"

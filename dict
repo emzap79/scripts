@@ -1,0 +1,72 @@
+#!/bin/bash - 
+# vim:ft=sh:
+# http://wiki.christophchamp.com/index.php/tre-agrep
+
+# config {{{ -
+set -o nounset                              # Treat unset variables as an error
+numb=0
+if [[ ! $@ ]]; then
+    echo "Usage: $0 'WORD'"
+    exit 1
+fi
+# }}} config -
+# choose language {{{ -
+case $1 in
+    es)
+        lang=s
+        ;;
+    en)
+        lang=e
+        ;;
+    *)
+        read -p "suchst du das Wort auf spanisch (s) oder englisch (e)? " lang
+        ;;
+esac
+# }}} choose language -
+# search for word {{{ -
+while true; do
+    case $lang in
+        s)
+            # tre-agrep -i -$numb --colour "$@" $HOME/.dictionaries/es-de.dic
+            tre-agrep -i -$numb --colour "$@" $HOME/.dictionaries/es-de.dic | perl -pe 's/::/\n    /g' | less
+            while [[ $(tre-agrep -i -$numb --colour "$@" $HOME/.dictionaries/es-de.dic | wc -l) = 0 ]]; do
+                read -p "wieviele Fehler möchtest du zulassen? [0-8] " numb
+                case $numb in
+                    [1-8] )
+                        tre-agrep -i -$numb --colour "$@" $HOME/.dictionaries/es-de.dic
+                        ;;
+                    *)
+                        echo ""
+                        echo "Dein gesuchtes Wort konnte nicht gefunden werden"
+                        break
+                        ;;
+                esac
+            done; break
+            ;;
+
+        e)
+            # tre-agrep -i -$numb --colour "$@" $HOME/.dictionaries/de-en.dic | sed 's/ :: /\r\t/g;s/$/\r\r/g'
+            tre-agrep -i -$numb --colour "$@" $HOME/.dictionaries/de-en.dic | perl -pe 's/::/\n    /g' | less
+            while [[ $(tre-agrep -i -$numb --colour "$@" $HOME/.dictionaries/de-en.dic | wc -l) = 0 ]]; do
+                read -p "wieviele Fehler möchtest du zulassen? [0-8] " numb
+                case $numb in
+                    [1-8] )
+                        tre-agrep -i -$numb --colour "$@" $HOME/.dictionaries/de-en.dic
+                        ;;
+                    *)
+                        echo ""
+                        echo "Dein gesuchtes Wort konnte nicht gefunden werden"
+                        break
+                        ;;
+                esac
+            done; break
+            ;;
+
+        *)
+            echo "Bitte erwünschte Sprache wählen"
+            echo ""
+            ;;
+    esac
+done
+# }}} search for word -
+exit 0

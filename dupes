@@ -1,0 +1,17 @@
+#!/bin/bash
+find . -type f -exec stat --printf='%32s ' {} \; -print |\
+    tee find_stat.log |\
+    sort -rn |\
+    uniq -d -w32 --all-repeated=separate |\
+    awk '(NF > 0){
+system( \
+    "md5sum \"`echo \"" $0 "\"|\
+    sed -r \"s/^ *[0-9]+ *//\" | tee -a f.log`\" |\
+    cut -c 1-32 | tr -d [:space:] " );
+printf " %32s %s\n", $1, $2 \
+}' |\
+tee md5sum_generation.log |\
+sort -r |\
+uniq -d -w65 --all-repeated=separate  |\
+awk '{print $3}' | \
+tee repeated_files.log

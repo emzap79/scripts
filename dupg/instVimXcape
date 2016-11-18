@@ -1,0 +1,21 @@
+#!/bin/bash
+
+#.################
+#.#.Check.for.Root
+#.################
+if [[ `id -u` -ne 0 ]]; then
+    echo ""
+    echo "hi `id -un`!"
+    echo "please reenter as root"
+    echo ""
+    exit 1
+fi
+
+### XCape installieren ############################
+###############################################
+yes y | apt-get install git gcc make pkg-config libx11-dev libxtst-dev libxi-dev
+cd /tmp/
+mkdir xcape
+cd xcape
+git clone https://github.com/alols/xcape.git .
+make

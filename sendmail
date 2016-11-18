@@ -1,0 +1,18 @@
+#!/bin/bash
+read -p "Gib den Betreff ein " subject
+read -p "Gib bitte den Empfänger der Email ein " receiver
+read -p "Gib den Pfad zur Textfile an (falls vorhanden) " text
+read -p "Möchtest du einen Anhang anfügen (Y|n)? " answer
+case "$answer" in
+    Yes|yes|Y|y|"")
+        read -ep "Gib den Pfad zum Anhang an " attachment
+        evolution mailto:$receiver?cc=$receivercc\&subject="$subject"\&attach=$attachment
+        ;;
+    No|no|N|n) 
+        evolution mailto:$receiver?cc=$receivercc\&subject="$subject"\&body=$(cat $text)
+        ;;
+    *) echo "Unbekannter Parameter" 
+        exit 1
+        ;;
+esac
+#evolution mailto:"kaktuuus@gmx.de"?receivercc=""\&subject="Bloomberg"\&body=`cat /home/zapata/tmp/bloomberg.txt | sed 's/ /\%20/g'

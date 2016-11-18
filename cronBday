@@ -1,0 +1,54 @@
+#!/bin/bash
+
+LIMIT=9
+IFILE="$HOME/.birthdays"
+OFILE="/tmp/bday_out$$"
+MAILID="kaktuuus@gmx.de"
+#MAILID="jonas.petong@stud.uni-due.de"
+TMPL="$HOME/Vorlagen/tmplMail"
+LOGDIR="$HOME/.logfiles"
+
+# check if already executed
+
+if [ ! -e "$LOGDIR/`date +%Y-%W`.bday" ];then
+    rm $LOGDIR/*.bday; touch "$LOGDIR/`date +%Y-%W`.bday"
+
+    for((i=1 ; i<=$LIMIT; i++))
+    do
+        arr[$i]=`date '+%d-%m' -d "$i days"`
+    done
+
+    sfi="$IFS"
+    while IFS='=/' read name day month year
+    do
+        for DAT in ${arr[@]}
+        do
+            DAY=${DAT:0:2}
+            MON=`echo ${DAT:3:3} | awk '{print toupper($0);}'`
+            day=`printf "%02d\n" $day`
+            month=`echo $month |  awk '{print toupper($0);}'`
+            if [ $day -eq $DAY -a $month = $MON ]
+            then
+                echo $DAT : $name 
+                break;
+            fi
+        done
+    done < $IFILE | sort -r -t'=' -k2n -k1n > $OFILE
+    IFS="$sfi"
+
+    #If OFILE has some data, header is added and the file
+    #is mailed to the respective users in MAILID.
+
+    if [ -f $OFILE -a -s $OFILE ]
+    then
+        cp $TMPL /tmp/bdmail
+        echo "Subject: Geburtstage für die `date +%U`. KW" >> /tmp/bdmail
+        echo "" >> /tmp/bdmail
+        cat $OFILE | tee -a /tmp/bdmail
+        msmtp -a Webde $MAILID < /tmp/bdmail
+        rm $OFILE
+        echo "Birthday mail sent"
+    else
+        echo "No birthdays today"
+    fi
+fi

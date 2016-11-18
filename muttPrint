@@ -1,0 +1,32 @@
+#!/usr/bin/env sh
+# adapted from: http://terminalmage.net/2011/10/12/printing-to-pdf-in-mutt/
+
+INPUT="$1"
+PDIR="$HOME/tmp/mutt_print"
+OPEN_PDF=evince
+
+# check to make sure that enscript and ps2pdf are both installed
+if ! command -v enscript || ! command -v ps2pdf; then
+echo "ERROR: both enscript and ps2pdf must be installed"
+exit 1
+fi
+
+# create temp dir if it does not exist
+if [ ! -d "$PDIR" ]; then
+mkdir -p "$PDIR"
+if [ $? -ne 0 ]; then
+echo "Unable to make directory '$PDIR'"
+exit 2
+fi
+fi
+
+tmpfile="`mktemp $PDIR/mutt_XXXXXXXX.pdf`"
+recode utf-8..latin1 | enscript --font=Arial8 -X latin1 -G2rE -p - |  ps2pdf - $tmpfile
+$OPEN_PDF $tmpfile
+sleep 1
+rm $tmpfile
+
+### Annotations ######
+######################
+# to change fonts go for
+# http://en.wikipedia.org/wiki/PostScript_fonts#Core_Font_Set

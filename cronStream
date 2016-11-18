@@ -1,0 +1,110 @@
+#!/bin/bash
+#####################################################################
+#################### Konfiguration ##################################
+#####################################################################
+RIPDIR="$HOME/tmp/streamripper"
+if [ ! -e $RIPDIR ]; then mkdir -p $RIPDIR; fi
+DEST="$HOME/tmp/music/radiostream"
+if [ ! -e $DEST ]; then mkdir -p $DEST; fi
+date=`/bin/date +%Y%m%d`
+dateYear=`/bin/date +%Y`
+dateRecord=`/bin/date +%F_%H:%M`
+uuidWD="3BEC-9DA3"
+checkDiscWD="/dev/disk/by-uuid/$uuidWD"
+fileDate="$RIPDIR/$date.date" #Datum-Steuerdatei, ob Backup schon durchgeführt wurde
+recTime=3200 TAGtrack=""  #Angabe der Aufnahmezeit in Sekunden
+
+### Software nachinstallieren #########################################
+if [ $(dpkg-query --show | grep "streamripper" | wc -l) = 0 ];
+then 
+    echo "Streamripper muss nachinstalliert werden:"
+    yes y | sudo apt-get install streamripper; 
+fi
+
+if [ $(dpkg-query --show | grep "mp3splt" | wc -l) = 0 ];
+then 
+    echo "Streamripper muss nachinstalliert werden:"
+    yes y | sudo apt-get install mp3splt; 
+fi
+
+
+#######################################################################
+#################### Radiostationen ###################################
+#######################################################################
+
+######################## Charts #######################################
+#######################################################################
+#TAGgenre=Pop\/\ Charts TAGyear="$dateYear" TAGalbum="977Radio" MODE="alt_eins" AUDIOSTREAM="http://yp.shoutcast.com/sbin/tunein-station.pls?id=1280356" #977 Radio
+#TAGgenre=Pop\/\ Charts TAGyear="$dateYear" TAGalbum=DasDing MODE="alt_eins" AUDIOSTREAM="http://swr.ic.llnwd.net:80/stream/swr_mps_m_dasdinga" #DasDing Radio
+
+######################## Reggaeton & Bossa ############################
+#######################################################################
+#TAGgenre=Reggaeton\/\ Latin\ Reggae TAGalbum=ReggaetonPuro MODE="alt_eins" AUDIOSTREAM="http://173.192.58.37:8162" #Reggaeton 24/7 Radio
+#TAGgenre=Bossa\ Nova\/\ Electrotango TAGalbum=BossaClub MODE="alt_eins" AUDIOSTREAM="http://yp.shoutcast.com/sbin/tunein-station.pls?id=450937" #Bossanovaclub.com.br Radio
+
+######################## Dancehall & Reggae ###########################
+#######################################################################
+#TAGgenre=Dancehall\/\ Soca TAGalbum="PureDancehall" MODE="alt_eins" AUDIOSTREAM="http://www.shoutcast.com/sbin/tunein-station.pls?id=1367913" #Dancehall Radio
+#TAGgenre=Dancehall\/\ Soca TAGalbum="PureDancehall" MODE="alt_eins" AUDIOSTREAM="http://yp.shoutcast.com/sbin/tunein-station.pls?id=448282" #RSDancehall Radio
+#TAGgenre=Reggae\/\ Dub TAGalbum="PureDancehall" MODE="alt_eins" AUDIOSTREAM="http://yp.shoutcast.com/sbin/tunein-station.pls?id=5661" #Le Grosse Studio
+
+######################## DnB & Jungle #################################
+#######################################################################
+#TAGgenre=Drum\ \&\ Bass\/\ Jungle TAGyear="$dateYear" TAGalbum=I\ Love\ Drum\ \&\ Bass\ \:\:\ Tracks MODE="alt_eins" AUDIOSTREAM="http://www.shoutcast.com/sbin/tunein-station.pls?id=1275981" #DnB Radio
+
+######################## Dubstep ######################################
+#######################################################################
+TAGgenre=Dubstep TAGyear="$dateYear" TAGalbum=Dubstep.FM MODE="alt_eins" AUDIOSTREAM="http://72.232.40.182:80" #Dubstep.FM Radio
+
+######################## Dance & House ################################
+#######################################################################
+#TAGgenre=Dance\/\ House TAGyear="$dateYear" TAGalbum=ParisOneDance MODE="alt_eins" AUDIOSTREAM="http://relais02.webradiofactory.com/paris-one.mp3" #ParisOneDance-Stream
+#TAGgenre=Dance\/\ House TAGyear=$dateYear TAGalbum="Di.FM" MODE="alt_eins" AUDIOSTREAM="http://listen.di.fm/public3/club.pls"  #Di.FM Stream
+
+############################ 80s/90s ##################################
+#######################################################################
+#TAGgenre=1980s\/\ 90s TAGalbum=Maxi\ 80s\ Radio MODE="alt_eins" AUDIOSTREAM="http://www.shoutcast.com/sbin/tunein-station.pls?id=1268280"  #Maxi 80s Radio France
+#TAGgenre=1980s\/\ 90s TAGalbum=80s\ Planet MODE="alt_eins" AUDIOSTREAM="http://www.shoutcast.com/sbin/tunein-station.pls?id=7678" #80s Planet
+
+#######################################################################
+##################### Aufnahme ########################################
+#######################################################################
+if [ -e $checkDiscWD -o -f $fileDate ]; then
+    exit 1
+else
+    sleep 5
+    /bin/rm -f $RIPDIR/*.date
+    /usr/bin/touch $fileDate
+    /bin/mkdir -p $RIPDIR $DEST
+    echo $dateRecord | tee $RIPDIR/record.txt
+    notify-send Streaming\ von\ "$TAGalbum"\ startet\!
+fi
+
+case $MODE in
+    alt_eins)
+        streamripper $AUDIOSTREAM -d $RIPDIR/ -l $recTime --xs2
+        ;;
+    alt_zwei)
+        streamripper $AUDIOSTREAM -a $RIPDIR/$(date +%x_%X).mp3 -L $RIPDIR/$(date +%x_%X) --xs2 -l $recTime
+        mp3splt -c $RIPDIR/$(date +%x)*.cue $RIPDIR/$(date +%x)*.mp3 
+        ;;
+esac
+
+################ Musikdateien verschieben ###########################
+#####################################################################
+find $RIPDIR -name "AMTAG*" -type f -exec rm "{}" ";"
+find $RIPDIR -size -1000k -type f -exec rm "{}" ";" #Entfernt sehr kleine MP3s
+find $RIPDIR -size +10000k -type f -exec rm "{}" ";" #Entfernt MP3s größer als 10MB
+find $RIPDIR -newer $RIPDIR/record.txt -type f -exec id3v2 -C "{}" ";"
+find $RIPDIR -newer $RIPDIR/record.txt -type f -exec id3v2 --TPE2 Various\ Artists --TALB "$TAGalbum" --TRCK "$TAGtrack" --TYER "$TAGyear" --TCON "$TAGgenre" "{}" ";"
+find $RIPDIR -size +999k -name "*.mp3" -exec mv -v "{}" $DEST/ ";"
+
+############# Dateien schneiden und verschieben #####################
+#####################################################################
+find $DEST -type f -exec mp3splt -s -p th=-50,nt=10 "{}" ";"
+find $DEST -size -1000k -type f -exec rm "{}" ";"   # Entfernt sehr kleine MP3s
+beet import -sq $DEST
+#rm -rv $DEST                                       # Löschen des Ordners $DEST
+
+
+exit 0

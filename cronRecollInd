@@ -1,0 +1,17 @@
+#!/bin/bash
+#.###########################
+#.##.Recollindex
+#.###########################
+LOGDIR="/home/zapata/.logfiles"
+PATHN="$HOME/Unimaterialien"
+chkRecoll=`ps -aef | grep -v grep | grep recollindex | wc -l`
+datefileRecoll="$LOGDIR/$(date +%Y%m%d).recoll"
+
+if [ ! -f $datefileRecoll ]; then
+	if [ $chkRecoll = 0 ]; then
+		/bin/rm -f $LOGDIR/*.recoll
+		/usr/bin/touch $datefileRecoll
+		#recollindex
+		find $PATHN -print | /usr/bin/recollindex -i
+	fi
+fi

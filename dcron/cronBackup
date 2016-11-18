@@ -1,11 +1,11 @@
 #!/bin/bash
 # vim:fdm=marker
 
-# Konfiguration                                            {{{1
+# Konfiguration                                     {{{1
 echo -e "\n###\n1\n###\n"
 
-# Dirs                                                     {{{2
-DEVICE="/media/zapata/Volume"
+# Dirs                                              {{{2
+DEVICE="/media/zapata/BKPDEVICE"
 BKP="$DEVICE"   # Backup-Verzeichnis
 BKP0="$BKP/backup0"
 TMPBKP=$HOME/tmp/bkpfiles$(/bin/date +%Y%m%d)
@@ -15,17 +15,16 @@ MOV=$HOME/Movies
 LOGDIR=$HOME/.logfiles
 if [ ! -e $LOGDIR ]; then mkdir -p $LOGDIR; fi
 
-# Options                                                  {{{2
-version=$(lsb_release -sc | sed 's/^\(.\)/\U\1/g')
-year=$(date +%Y)
+# Options                                           {{{2
+version=
 oldyear=$(date +%Y --date="last year")
 options="{ start | check }"
 datefile="$LOGDIR/$(date +%Y%m-%W).backup"   # Datum-Steuerdatei, ob Backup schon durchgeführt wurde
 export DISPLAY=0:0                           # Damit Notify-Send auch in Cron-gesteuerten Skripten arbeitet
 shopt -u failglob                            # Stellt sicher dass Dateien nach Schema .??* gefunden werden
 
-# Checks                                                   {{{2
-chkDiscVOL=$(df | grep Volume | wc -l)
+# Checks                                            {{{2
+chkDiscVOL=$(df | grep $DEVICE | wc -l)
 chkDok=`df | grep Dokumente | wc -l`
 chkYAD=$(dpkg-query --show | grep yad | wc -l)
 
@@ -37,9 +36,9 @@ chkYAD=$(dpkg-query --show | grep yad | wc -l)
 # cp -v --sparse $imgs $BKP0
 # fi
 
-# Backup vorbereiten                                       {{{1
+# Backup vorbereiten                                {{{1
 
-# Überprüfen ob Skript bereits ausgeführt wurde         {{{2
+# Überprüfen ob Skript bereits ausgeführt wurde  {{{2
 check_backup_logfile(){
 echo -e "\n###\n2\n###\n"
 
@@ -51,13 +50,13 @@ echo -e "\n###\n2\n###\n"
 
     case $1 in
         start)
-            # Überprüfen ob YAD installiert              {{{2
+# Überprüfen ob YAD installiert                   {{{2
             if [ $chkYAD = 0 ]; then
                 echo "Um die fehlenden Programme zu installieren muss das Root-Passwort eingegeben werden:"
                 yes y | sudo apt-get install yad;
             fi
 
-            # Dialog ausführen                            {{{2
+# Dialog ausführen                                 {{{2
             /usr/bin/yad --center --on-top --question --title=".:: BACKUP ::." \
                 --timeout=100 --timeout-indicator=top --text-align=center --text \
                 "Backup\ starten\?\n\n\>\>\>\ Ab\ geht\ die\ Post\ \:\-\)" \
@@ -77,35 +76,35 @@ echo -e "\n###\n2\n###\n"
 
 save_ppa (){
     echo -e "\n###\n3\n###\n"
-    # Software und PPAs sichern                            {{{2
+# Software und PPAs sichern                         {{{2
     chkTmpBkp=$(ls -A $HOME/* | grep backupfiles`date +%Y` | wc -l)
     if [ $chkTmpBkp = 0 ];then
 
-        # Directory anlegen                                {{{3
+# Directory anlegen                                 {{{3
         mkdir -p $TMPBKP
         extns="$TMPBKP/extensions.log"
 
-        # Einstellungen sichern                            {{{3
+# Einstellungen sichern                             {{{3
         dpkg --get-selections | grep -v deinstall > $TMPBKP/packages                                # Sicherung installierter Programme
         cp -rv /etc/apt/sources.list.d /etc/apt/sources.list $TMPBKP/                               # Paketquellen
         cd $TMPBKP/sources.list.d && tar -cvfz ../reposBackup-`date +%Y%m%d`.tar.gz * && cd $HOME
         crontab -l > $TMPBKP/cronjob.log                                                            # Cronjob Sicherung
         cp -v /etc/crontab $TMPBKP/cronjobSudo.log                                                  # Cronjobs mit Root Berechtigung
 
-        # Sortiert nach Upgrade zu installierend Software  {{{3
+# Sortiert nach Upgrade zu installierend Software   {{{3
         cat "$LOGDIR/upgSoftw.list" | sed '/^$/d' | sort | uniq -i | tee "/tmp/foo"; mv "/tmp/foo" "$LOGDIR/upgSoftw.list"
     fi
 }
 
-# Externe Festplatten überprüfen                         {{{1
+# Externe Festplatten überprüfen                  {{{1
 check_ext_drive (){
 echo -e "\n###\n3\n###\n"
 
-    # Festplattendialog                                    {{{2
+# Festplattendialog                                 {{{2
     sleep 10   # Warte bis Festplatte erkannt
     while [ "$chkDiscVOL" = 0 ]|| [ "$chkDok" = 0 ]; do
 
-        # Nachricht festlegen                              {{{3
+# Nachricht festlegen                               {{{3
         if [ $chkDiscVOL = 0 ];then messageVOL="Festplatte: *Volume*"; fi
         if [ $chkDok = 0 ];then messageDok="Ordner: *Dokumente*"; fi
         /usr/bin/yad --center --timeout=900 --question --title=".:: Laufwerkcheck ::." \
@@ -113,23 +112,22 @@ echo -e "\n###\n3\n###\n"
             --text "Folgende Laufwerke \n müssen erst angeschlossen werden:
         \n$messageDok\n$messageVOL\n\n(erst bestätigen wenn alle \n Festplatten eingehängt sind!\)" --display=:0.0
 
-        # Break bei Abbruch                                {{{3
+# Break bei Abbruch                                 {{{3
         if [ $? = 1 ]; then exit 1; fi
         sleep 2
 
-        # Neu Überprüfen                                 {{{3
+# Neu Überprüfen                                  {{{3
         chkDiscVOL=`df | grep Volume | wc -l`
         chkDok=`df | grep Dokumente | wc -l`
     done
 
-    # Konfiguration für BKP                               {{{2
+# Konfiguration für BKP                            {{{2
     logfile="$BKP/BackupChronik-`/bin/date +%Y`.txt"
     logfileOld=$(ls $BKP | egrep '^BackupChronik' | egrep $oldyear)
-    week=`cat $logfile | awk '{print $3}' | awk 'FNR == 2{print}'`
     if [ -e '$BKP/$logfileOld' ]; then mv -v $BKP/$logfileOld $BKP/$logfile; fi
     bkpNeu=$(ls -Al $BKP/* | egrep '^d' | awk '{print $6}' | grep -v backup0 | sort -r | awk 'FNR == 1{print}')
 
-    # Logfile anlegen                                      {{{2
+# Logfile anlegen                                   {{{2
     if [ ! -e '$BKP0' ]; then mkdir -p $BKP0; fi
     notify-send "Backup startet!"
     /bin/rm -f $LOGDIR/[[:digit:]]*.backup
@@ -137,38 +135,43 @@ echo -e "\n###\n3\n###\n"
     gsettings set org.gnome.desktop.screensaver lock-enabled false
 }
 
-
 make_logfile (){
 echo -e "\n###\n4\n###\n"
-    # Anlegen der Logfile und der Ordner                   {{{2
+# Anlegen der Logfile und der Ordner                {{{2
     if [ ! -e $logfile ];then
         echo -e "##### Backup Chronik ` +%Y` #####\n`date --date="last week"\
             +%B%d` ## `date --date="last week" +%W` ## `date --date="last week"`" |\
             tee "$logfile"
     fi
 
-    # Neuen Backupordner anlegen                           {{{2
-    bkp1="$year""$week"_"$version"_"$(sed -e 's/#.*$//g;/^$/d;s/ //g' $logfile | awk 'FNR == 1{print}')"
-    if [ ! -d "$BKP/$bkp1" ]; then mkdir -p "$BKP/$bkp1"; fi
+# Neuen Backupordner anlegen                        {{{2
+year=$(date +%Y)
+week=`cat $logfile | awk '{print $3}' | awk 'FNR == 2{print}'`
+version=$(lsb_release -sc | sed 's/^\(.\)/\U\1/g')
 
-    echo ""
-    echo "+++++++++++++++++++++++++++++++++++++++++++++++++++"
-    echo ""
-    echo "Neuer Backupordner ist: $BKP/$bkp1"
-    echo ""
-    echo "+++++++++++++++++++++++++++++++++++++++++++++++++++"
-    echo ""
-    sleep 2
+bkp1="$year""$week"_"$version"_"$(sed -e 's/#.*$//g;/^$/d;s/ //g' $logfile | awk 'FNR == 1{print}')"
+if [ ! -d "$BKP/$bkp1" ]; then mkdir -p "$BKP/$bkp1"; fi
 
-    # Alte Backups ermitteln und löschen                  {{{2
-    BKPcount=$(ls -Al $BKP | egrep '^d' | grep -v backup0 | wc -l)
-    if [ $BKPcount -gt 20 ]; then
-        # Lösche alle Directories, abgesehen der zuletzt angelegten 20 Ordner
-        /bin/rm -rfv $(ls -Al $BKP | egrep '^d' | grep -v backup0 | awk 'FNR != 20{print $NF}' | tr '\n' ' ')
-    fi
+echo ""
+echo "+++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo ""
+echo "Neuer Backupordner ist: $BKP/$bkp1"
+echo ""
+echo "+++++++++++++++++++++++++++++++++++++++++++++++++++"
+echo ""
+sleep 2
+
+# Alte Backups ermitteln und löschen               {{{2
+BKPcount=$(ls -Al $BKP | egrep '^d' | grep -v backup0 | wc -l)
+if [ $BKPcount -gt 20 ]; then
+# Lösche alle Directories, abgesehen der zuletzt angelegten 20 Ordner
+pushd .
+cd $BKP && /bin/rm -rfv $(ls -d */ | grep -v backup0 | sort -r -k9 -n | tail -n +20 | tr '\n' ' ')
+popd
+fi
 }
 
-# Extensions Einstellungen sichern                         {{{1
+# Extensions Einstellungen sichern                  {{{1
 save_config (){
 echo -e "\n###\n5\n###\n"
     echo -e "################################\n###.Extension.Configurations.###\n################################" | tee "$extns"
@@ -179,44 +182,42 @@ echo -e "\n###\n5\n###\n"
     echo "###.Multimedia-Keys.####
     `gsettings get org.gnome.settings-daemon.plugins.media-keys custom-keybindings`" | tee -a "$extns"
 
-    # echo "###.Spamassassin-Database.####
-    # `/usr/bin/sa-learn --backup`" | tee -a "$extns"
-    # echo "###########################" | tee -a "$extns"
+# echo "###.Spamassassin-Database.####
+# `/usr/bin/sa-learn --backup`" | tee -a "$extns"
+# echo "###########################" | tee -a "$extns"
 }
 
-# Anlegen des heutigen Backups                             {{{1
+# Anlegen des Backups                               {{{1
 create_bkp (){
+# /usr/bin/rsync 1                                  {{{2
+# Kopiert Dateien wenn nicht bereits am Zielort vorhanden
+/usr/bin/rsync --progress -rv --ignore-existing $MOV $SOFTW $MUSIC/
 
-    # /usr/bin/rsync 1                                     {{{2
-    # Kopiert Dateien wenn nicht bereits am Zielort vorhanden
-    /usr/bin/rsync --progress -rv --ignore-existing $MOV $SOFTW $MUSIC/
+# /usr/bin/rsync 2                                  {{{2
 
-    # /usr/bin/rsync 2                                     {{{2
-    /usr/bin/rsync "$HOME/" \
-        --backup --backup-dir="$BKP/$bkp1"/ \
-        --delete \
-        --delete-excluded \
-        --exclude="$HOME/.{cache,imgs}" \
-        --exclude="$HOME/{mnt,Movies,Musik,Software,Downloads}" \
-        --inplace \
-        --progress \
-        --recursive \
-        --update \
-        --verbose \
-        "$BKP/backup0"/
+/usr/bin/rsync "$HOME"/ \
+    --backup --backup-dir="$BKP/$bkp1" \
+    --delete-during \
+    --delete-excluded \
+    --exclude="**.git" \
+    --exclude="~/.{cache,imgs,PlayOnLinux}" \
+    --exclude="~/{mnt,Movies,Musik,Software,Downloads}" \
+    --progress \
+    --recursive \
+    --inplace \
+    --verbose \
+    "$BKP/backup0"/
 
-    # UpdateDB anlegen                                     {{{
+# UpdateDB anlegen                                  {{{
     /usr/bin/updatedb -l 0 -o "$LOGDIR/locate_backup.db" -U "$BKP"
 
-    # Downloads, Software & tmp aufräumen                 {{{2
+# Downloads, Software & tmp aufräumen              {{{2
     yes y | /usr/bin/find $HOME/Downloads -type f -mtime +21 -exec rm -v "{}" ";" #Aufräumen des Download Ordners
     yes y | /usr/bin/find $HOME/tmp -type f -mtime +14 -exec rm -v "{}" ";" #Aufräumen des tmp Ordners
     yes y | /usr/bin/find $HOME/tmp -depth -type d -empty -exec rmdir -v -- {} \;
 }
 
-# Miscellaneous                                            {{{1
-
-# Recollindex                                              {{{2
+# Recollindex                                       {{{1
 index_recoll (){
 echo -e "\n###\n6\n###\n"
     chkRecoll=`ps -aef | grep -v grep | grep recollindex | wc -l`
@@ -233,11 +234,11 @@ echo -e "\n###\n6\n###\n"
 shutd_laptop ()
 {
 
-    # Backup-Chronik editieren                             {{{3
+# Backup-Chronik editieren                          {{{3
     sed -i "1 s/^.*$/#####\ Backup\ Chronik\ `date +%Y`\ #####/g" $logfile
     sed -i "2 s/^/`/bin/date +%B%d`\ ##\ `date +%W`\ ##\ `date`\n/g" $logfile
 
-    # Laptop herunterfahren                                {{{3
+# Laptop herunterfahren                             {{{3
     gsettings set org.gnome.desktop.screensaver lock-enabled true
     notify-send "Alle Backups beendet!"
     /usr/bin/yad --center --on-top --question --title=".:: SHUTDOWN ::." --timeout=1200 --timeout-indicator=top --text-align=center --text "Backup\ beendet\. \ Soll\ der\ Rechner\ nun\ runtergefahren\ werden\?" --display=:0.0
@@ -248,7 +249,7 @@ shutd_laptop ()
     fi
 }
 
-# Functions                                                {{{1
+# Functions                                         {{{1
 check_backup_logfile $1
 save_ppa
 check_ext_drive

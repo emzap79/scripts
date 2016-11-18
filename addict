@@ -1,0 +1,188 @@
+#!/bin/bash
+echo ""
+echo "Denk daran alle Vokabeln in -"
+echo "Anführungsstriche (\"\") zu setzen!"
+echo ""
+
+### Auswahl des Wörterbuchs
+selTitle="Beispielauswahl"
+selPrompt="Wähle eine der Wörterbücher:"
+selOptions=("Deutsch-Englisch" "Spanisch-Deutsch" )
+
+echo "$selTitle"
+PS3="$selPrompt "
+select opt in "${selOptions[@]}" "Quit"; do 
+
+    case "$REPLY" in
+        1 ) echo "Du hast Option $REPLY gewählt: $opt"
+            lang="englisch"
+            dict=$HOME/.dictionaries/de-en.dic
+            ;;
+        2 ) echo "Du hast Option $REPLY gewählt: $opt"
+            lang="spanisch"
+            dict=$HOME/.dictionaries/es-de.dic
+            ;;
+        $(( ${#selOptions[@]}+1 )) ) echo "Goodbye!"; 
+            exit 1 ; 
+            break
+            ;;
+        *) echo "Ungültige Option. Wähle etwas anderes."
+            ;;
+    esac; break
+
+done
+
+### Eingabe der Vokabeln 
+read -p "Handelt es sich um ein "$lang"es Substantiv (S), Verb (V), Adjektiv\
+(A), Adverb (Adv) oder Pronomen (P)? " word
+case $word in
+    S|s)
+        #Fremdsprachiges Substantiv
+        read -p "Gib das "$lang"e Wort ein: " answer
+        extSubst=$(echo $answer | sed 's/" /\; /g;s/"//g')
+        read -p "Gib das Geschlecht ein (m|f) " extGend
+
+        #Pluralform
+        read -p "Pluralform vorhanden (y|N)? " answer
+        case $answer in
+            y|Y)
+                read -p "wie lautet sie? " pl
+                ;;
+            n|N|"")
+                pl=""
+                ;;
+        esac
+
+        #Deutsches Substantiv
+        read -p "Gib das deutsche Wort ein: " answer
+        subst=$(echo $answer | sed 's/" /\; /g;s/"//g')
+        read -p "Gib das Geschlecht ein (m|f|n) " gend
+
+        #Pluralform
+        read -p "Pluralform vorhanden (y|N)? " answer
+        case $answer in
+            y|Y)
+                read -p "wie lautet sie? " pl_ger
+                ;;
+            n|N|"")
+                pl_ger=""
+                ;;
+        esac
+        cntPl=$(echo "$pl" "$pl_ger" | wc -w)
+
+        case $lang in
+            spanisch)
+                case "$cntPl" in
+                    0)
+                        echo "$extSubst {$extGend} :: $subst {$gend}" | tee -a $dict
+                        ;;
+                    1)
+                        if [[ $pl == "" ]]; then
+                            echo "$extSubst {$extGend} :: $subst {$gend} | $pl_ger {pl}" | tee -a $dict
+                        else
+                            echo "$extSubst {$extGend} | $pl {pl} :: $subst {$gend}" | tee -a $dict
+                        fi
+                        ;;
+                    2)
+                        echo "$extSubst {$extGend} | $pl {pl} :: $subst {$gend} | $pl_ger {pl}" | tee -a $dict
+                        ;;
+                esac
+                ;;
+
+            englisch)
+                case "$cntPl" in
+                    0)
+                        echo "$subst {$gend} :: $extSubst {$extGend}" | tee -a $dict
+                        ;;
+                    1)
+                        if [[ $pl == "" ]]; then
+                            echo "$subst {$gend} | $pl_ger {pl} :: $extSubst {$extGend}" | tee -a $dict
+                        else
+                            echo "$subst {$gend} :: $extSubst {$extGend} | $pl {pl}" | tee -a $dict
+                        fi
+                        ;;
+                    2)
+                        echo "$subst {$gend} | $pl_ger {pl} :: $extSubst {$extGend} | $pl {pl}" | tee -a $dict
+                        ;;
+                esac
+                ;;
+        esac
+
+        ;;
+    V|v)
+        echo ""
+        read -p "Gib das "$lang"e Wort ein: " answer
+        extVerb=$(echo $answer | sed 's/" /\; /g;s/"//g')
+
+        echo ""
+        read -p "Gib jetzt das deutsche Wort ein: " answer
+        verb=$(echo $answer | sed 's/" /\; /g;s/"//g')
+
+        case $lang in
+            spanisch)
+                echo "$extVerb {v} :: $verb {v}" | tee -a $dict
+                ;;
+            englisch)
+                echo "$verb {v} :: $extVerb {v}" | tee -a $dict
+                ;;
+        esac
+        ;;
+
+    Adv|adv)
+        echo "" 
+        read -p "Gib das "$lang"e Adverb ein: " "answer"
+        extAdv=$(echo $answer | sed 's/" /\; /g;s/"//g')
+
+        echo ""
+        read -p "Gib das deutsche Adverb ein: " "answer"
+        adv=$(echo $answer | sed 's/" /\; /g;s/"//g')
+
+        case $lang in
+            spanisch)
+                echo "$extAdv {adv} :: $adv {adv}" | tee -a $dict
+                ;;
+            englisch)
+                echo "$adv {adv} :: $extAdv {adv}" | tee -a $dict
+                ;;
+        esac
+        ;;
+
+    A|a|Adj|adj)
+        echo "" 
+        read -p "Gib das "$lang"e Adjektiv ein: " "answer"
+        extAdj=$(echo $answer | sed 's/" /\; /g;s/"//g')
+
+        echo ""
+        read -p "Gib das deutsche Adjektiv ein: " "answer"
+        adj=$(echo $answer | sed 's/" /\; /g;s/"//g')
+
+        case $lang in
+            spanisch)
+                echo "$extAdj {adj} :: $adj {adj}" | tee -a $dict
+                ;;
+            englisch)
+                echo "$adj {adj} :: $extAdj {adj}" | tee -a $dict
+                ;;
+        esac
+        ;;
+
+    P|p)
+        echo ""
+        read -p "Gib das "$lang"e Pronomen ein: " "answer"
+        extPron=$(echo $answer | sed 's/" /\; /g;s/"//g')
+
+        echo ""
+        read -p "Gib das deutsche Pronomen ein: " "answer"
+        pron=$(echo $answer | sed 's/" /\; /g;s/"//g')
+
+        case $lang in
+            spanisch)
+                echo "$extPron {pron} :: $pron {pron}" | tee -a $dict
+                ;;
+            englisch)
+                echo "$pron {pron} :: $extPron {pron}" | tee -a $dict
+                ;;
+        esac
+
+        ;;
+esac

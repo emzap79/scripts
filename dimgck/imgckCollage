@@ -1,59 +1,81 @@
+# vim:fdm=marker filetype=sh
 #!/bin/sh
-# ###########################
+
+# front matters            {{{1
 # http://www.wizards-toolkit.org/discourse-server/viewtopic.php?f=1&t=16249
-# res="100x100^^"   # orig script
+# http://superuser.com/a/290679
+
+# montage
+# -background none \    # none, black, white ...
+# -mode=concatenate \   # Aneinanderreihen
+# -geometry $geom \
+#     -tile 4x4 $out \  # 4x4: 4 reihen, 4 spalten
+# -shadow \             # Schatteneffekt
+# $out
+
+# res="100x100^^"     # orig script
 # crop="100x100+0+0"  # orig script
-# geom="32x32+0+0"   # orig script
-# ###########################
-res="600x600^^"         # Qualität der Bilder
-crop="600x400"          # Schnittbreite und -höhe
+# geom="32x32+0+0"    # orig script
+
+# Configs                  {{{1
+
+res="400x400^^"         # Qualität der Bilder
+crop="400x200"          # Schnittbreite und -höhe
 geom="$crop+5+0"        # Breite und Höhe im Resultat
+til="2x2"               # Anzahl der Bilder pro Reihe
 out="collage.png"       # Name des neuen Bildes
 
-# ###########################
-# Optionen
-# ###########################
-# # convert
-#-crop "$crop" \
-#-resize "$res" \
+# Skript                   {{{1
+if [[ "$*" = "" ]]
+then
+    echo "usage: $0 <file1><file2><file3><file...>"
+    exit 1
+fi
 
-# # montage
-#-background none \         # none, black, white ...
-#-mode=concatenate \        # Aneinanderreihen
-#-geometry $geom \
-#-tile x1 $out \            # 4x4: 4 reihen, 4 spalten
-#-shadow \                  # Schatteneffekt
+# Verzeichnis anlegen      {{{2
+if [[ -d ./imagefolder ]]; then rm -rv imagefolder; fi
+mkdir -p ./imagefolder
+# cp -v "$@" ./imagefolder/
+# cd ./imagefolder
 
-# ###########################
-# Skript
-# ###########################
-# # Verzeichnis anlegen
-rm -rv foo
-mkdir ./foo
-cp -v "$@" ./foo/
-cd ./foo
-
-if [ -e "$1" ]; then
-    # # Bilder konvertieren
-    for f in "$*"; do convert $f \
-        -crop "$crop" \
-        -resize "$res" \
-        +repage bar_%03d.png;
+# Dateigröße verringern  {{{2
+for f in "$*"; do
+    ext="${@##*.}"
+    nam="${@%%.*}"
+    convert $f \
+    -crop "$crop" \
+    -resize "$res" \
+    ./imagefolder/${f%%.*}.jpg
 done
 
-# # Collage erstellen
-montage bar_*.png \
+# Spezialeffekte einbauen  {{{2
+cd ./imagefolder
+
+# Rounded Corners          {{{3
+# http://www.imagemagick.org/Usage/thumbnails/#rounded
+# for f in "$*"; do convert $f \
+for f in "*.jpg"; do convert $f \
+    -alpha set \
+    \( +clone -distort DePolar 0 \
+    -virtual-pixel HorizontalTile -background None -distort Polar 0 \) \
+    -compose Dst_In -composite -trim +repage "$(basename $f .png)_rounded_corners".png
+
+# Torn Paper               {{{3
+# http://www.imagemagick.org/Usage/thumbnails/#torn
+for f in "*.jpg"; do convert $f \
+    \( +clone -alpha extract -virtual-pixel black \
+    -spread 10 -blur 0x3 -threshold 50% -spread 1 -blur 0x.7 \) \
+    -alpha off -compose Copy_Opacity \
+    -composite "$(basename $f .jpg)_torn_paper".png
+done
+
+# Collage erstellen
+montage *.png \
     -background none \
-    -tile x1 \
+    -tile $til \
     -geometry $geom \
     -shadow \
 ../$out
 
-# # Leave Folder & remove pics
-cd ..
-display $out
-rm -rv foo
-
-else
-    echo "usage: $0 <file1><file2><file3><file...>"
-fi
+# Leave Folder & remove pics
+display ../$out

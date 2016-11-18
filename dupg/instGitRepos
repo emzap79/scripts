@@ -1,0 +1,61 @@
+# vim:fdm=marker:
+
+#!/bin/bash
+# Installing Programs from GitHub   {{{1
+# checking for root permissions.    {{{2
+
+if [[ `id -u` -ne 0 ]]; then
+    echo ""
+    echo "hi `id -un`!"
+    echo "please reenter as root"
+    echo ""
+    exit 1
+fi
+
+
+# change to temporary directory.    {{{2
+sudo -u $USER mkdir -p $HOME/tmp/gitrepos/
+sudo -u $USER cd $HOME/tmp/gitrepos/
+
+# install dependencies.             {{{2
+
+yes y | apt-get install git
+yes y | apt-get install git-core
+yes y | apt-get install gettext
+yes y | apt-get install intltool
+yes y | apt-get install gnome-control-center-dev
+yes y | apt-get install python-gconf
+yes y | apt-get install gawk
+
+
+# install google translator cli.    {{{2
+# http://www.techdrivein.com/2014/03/google-translate-in-your-terminal-oh-yes.html
+sudo -u $USER git clone git://github.com/soimort/google-translate-cli.git
+sudo -u $USER cd google-translate-cli
+sudo -u $USER make install
+
+# install hamster applet.           {{{2
+yes y | apt-get purge hamster-applet
+sudo -u $USER mkdir -p $HOME/.hamster-applet/
+sudo -u $USER cd $HOME/.hamster-applet
+sudo -u $USER git clone git://github.com/projecthamster/hamster.git
+sudo -u $USER cd $HOME/.hamster-applet/hamster
+./waf configure build --prefix=/usr
+./waf install
+killall hamster-service & killall hamster-windows-service
+
+
+# install pms-youtube viewer        {{{2
+apt-get install pip
+pip install pms-youtube
+
+# install xlrd (excel.vim plugin) {{{2
+pip install xlrd
+
+# install fuzzyfinder               {{{2
+
+git clone https://github.com/junegunn/fzf.git ~/.fzf
+~/.fzf/install
+
+
+

@@ -1,0 +1,48 @@
+#!/bin/bash - 
+#===============================================================================
+#
+#          FILE:  imgckScanImage.sh
+# 
+#         USAGE:  ./imgckScanImage.sh 
+# 
+#   DESCRIPTION:  Scanning and Printing a Document from Command-Line
+# 
+#       OPTIONS:  ---
+#  REQUIREMENTS:  ---
+#          BUGS:  ---
+#         NOTES:  ---
+#        AUTHOR: Jonas Petong (), 
+#       COMPANY: 
+#       CREATED: 24.07.2013 16:12:28 CEST
+#      REVISION:  ---
+#===============================================================================
+
+set -o nounset                              # Treat unset variables as an error
+
+# ###########################
+# Variablen
+# ###########################
+output="/tmp/kopie.ps"
+
+# ###########################
+# Script
+# ###########################
+#Scannen eines Dokumentes, ausdrucken
+## Scannen
+scanimage -p -v --resolution=300 --mode=Gray -x 210 -y 295 --format pnm > /tmp/outfile.pnm
+# PNM in Postscript wandeln
+pnmtops -equalpixels -dpi 300 -width 8.4 -height 11.6 /tmp/outfile.pnm > $output
+
+read -p "Willst du die Datei Drucken? " answer
+case $answer in
+    y|Y|yes|"")
+        # Drucken
+        lpr -P $1 /tmp/kopie.ps
+        # Temporäre Dateien löschen
+        rm /tmp/outfile.pnm 
+        rm /tmp/kopie.ps
+        ;;
+    *)
+        echo "Dein Dokument befindet sich unter $output"
+        ;;
+esac

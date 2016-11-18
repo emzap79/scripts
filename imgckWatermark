@@ -1,0 +1,47 @@
+#!/bin/bash
+
+WATERMARK="watermark.png"
+
+resize=450
+
+# "*****************************************"
+
+# "* Image Resize and Watermarking Script  *"
+
+# "*         By Krutant.com                *"
+
+# "*****************************************"
+
+read -p "Watermark with file \""$WATERMARK"\" & resize all images to width "$resize"?  " prompt
+
+if [[ $prompt == "y" || $prompt == "Y" || $prompt == "yes" || $prompt == "Yes" ]]
+
+then
+
+    echo ""
+
+    shopt -s nullglob
+
+    for each in *{.jpg,.jpeg,.JPG,.JPEG}
+
+    do
+
+        echo -n "Working on "$each" ..."
+
+        convert -resize $resize "$each" "$each" >> /dev/null
+
+        composite -gravity center -dissolve 100 $WATERMARK "$each" "$each" >> /dev/null
+
+        echo "[Done]"
+
+    done
+
+    echo ""
+
+    read -p "Press Enter to exit ..."
+
+else
+
+    exit 0
+
+fi

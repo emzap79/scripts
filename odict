@@ -1,0 +1,23 @@
+#!/bin/bash - 
+#===============================================================================
+#
+#          FILE:  othes.sh
+# 
+#         USAGE:  ./othes.sh 
+# 
+#   DESCRIPTION:  
+# 
+#       OPTIONS:  ---
+#  REQUIREMENTS:  ---
+#          BUGS:  ---
+#         NOTES:  ---
+#        AUTHOR: Jonas Petong (), 
+#       COMPANY: 
+#       CREATED: 26.06.2013 14:33:34 CEST
+#      REVISION:  ---
+#===============================================================================
+
+set -o nounset                              # Treat unset variables as an error
+
+egrep -i $1 --color -h ~/.dictionaries/de-en.dic
+#read -p "[Press Enter to exit]"

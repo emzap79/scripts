@@ -4,7 +4,7 @@ pssw ()
 {
     case $1 in
         regular|initiate )
-            echo -n `< /dev/urandom tr -dc A-Z-a-z-0-9 | head -c8` | xclip
+            echo -n `< /dev/urandom tr -dc A-Z-a-z-0-9 | head -c12` | xclip
             xclip -o
             case $1 in
                 regular )

@@ -1,0 +1,186 @@
+#!/bin/bash
+export DISPLAY=:0  #Damit Notify-Send auch in Cron-gesteuerten Skripten arbeitet
+
+#.###########################
+#.###########################
+#.#.TOC#{{{
+#.###########################
+#.###########################
+
+#.#.Konfiguration
+#.##.Anlegen.MSK01
+#.##.checkt.ob.beets.gerade.ausgeführt.wird
+#.##.checkt.ob.Skript.gerade.ausgeführt.wird
+#.##.checkt.ob.Volume.eingehängt
+#.##.Anpassen.der.BeetsConfig
+#
+#.#.Musicscan.vorbereiten
+#.##.Unter.Bedingg.dass.Referenzdatei.nicht-leere.Zeilen.enthält
+#.###.Standard-Musik-Import
+#.###.Entfernen.der.Library
+#.###.Löscht.erste.Zeile.der.dirBeets-File
+#.##.Referenzdatei.ist.leer
+#.###.Wiederholten.Import.vorbereiten
+#.###.Entfernen.der.Artefakte.&.leeren.Ordner
+#.###.Ordnergrößen.ermitteln
+#.###.ob.letzterstellter.Ordner.Musik.enthält
+#.###.Ausgabe.nicht.importierter.Musik
+#
+#.#.Ordner.archivieren.&.Script.deaktivieren
+#.##.Neuen.Ordner.anlegen
+#.##.EOF
+#}}}
+#.###########################
+#.###########################
+#.#.Konfiguration
+#.###########################
+#.###########################
+
+#VOL="$HOME/tmp/foobar".#für.Testzwecke
+VOL="/media/zapata/Volume"
+#MUS="$VOL/Singles"
+MUS="/home/zapata/tmp/music/ogg/"
+
+#.###########################
+#.##.Anlegen.MSK01
+#.###########################
+if [ "$(ls -Al "$VOL" | egrep 'MSK01' | wc -l)" = 0 ]; then mkdir -p "$VOL/MSK01"; fi
+
+libdirs="$HOME/.beets"
+confdir="$HOME/.config/beets/config.yaml"
+listBeets="$HOME/.logfiles/beets.list"
+if [ ! -e "$listBeets" ]; then sed -e '/^#/d' "$listBeets.bkp" | tee "$listBeets"; fi
+
+logBeets="$HOME/.logfiles/logBeets.list"
+beets=`cat "$listBeets" | sed '/^#/d' | awk 'FNR == 1{print}'`
+
+xz=$(echo "$(ls -Al "$VOL" | egrep '('Musik'|'MSK')' | wc -l)/100" | bc -l | sed 's/^.//g;s/0\{18\}$//g')
+xydirs=$(ls -Al "$VOL" | grep MSK | egrep '^d' | awk '{print $9}' | sort -r | awk 'FNR == 1{print}')
+
+chkBeet=`top -n 1 | grep beet | wc -l`
+chkDiscVOL=`ls -l /dev/disk/by-uuid | grep 2F4025F868E8C3A8 | wc -l`
+
+#.###########################
+#.##.checkt.ob.beets.gerade.ausgeführt.wird
+#.###########################.
+if [ "$chkBeet" != 0 ]; then
+echo "Beets läuft bereits"
+exit 1
+fi
+
+#.###########################
+#.##.checkt.ob.Skript.gerade.ausgeführt.wird
+#.###########################.
+#.Quelle:.http://stackoverflow.com/questions/1440967/how-do-i-make-sure-my-bash-script-isnt-already-running
+lf=/tmp/pidLockFile
+touch $lf
+read lastPID < $lf
+[ ! -z "$lastPID" -a -d /proc/$lastPID ] && exit
+echo not running
+echo $$ > $lf
+
+#.###########################
+#.##.checkt.ob.Volume.eingehängt
+#.###########################
+if [ "$chkDiscVOL" != 1 ]; then
+echo "ExtFestpl nicht eingehängt!"
+exit 1
+fi
+
+#.###########################
+#.##.Anpassen.der.BeetsConfig
+#.###########################.
+sed -i '/^directory.*$/d' "$confdir"
+echo "directory: $VOL/$xydirs" | tee -a "$confdir"
+
+
+#.###########################
+#.###########################
+#.#.Musicscan.vorbereiten
+#.###########################
+#.###########################
+
+#.###########################
+#.##.Unter.Bedingg.dass.Referenzdatei.nicht-leere.Zeilen.enthält
+#.###########################
+
+chkList=$(cat "$listBeets" | sed '/^#.*$/d' | wc -l)
+if [ "$chkList" != 0 ]; then
+
+#.#############
+#.###.Standard-Musik-Import
+#.#############.
+yes n | beet import -qsC $MUS/$beets*
+beet move -d $VOL/$xydirs
+#/home/zapata/bin/mp3organizer.$MUS/$beets*
+
+#.#############
+#.###.Entfernen.der.Library
+#.#############.
+yes y | beet rm
+rm -f "$HOME/.beets/library.blb"
+
+#.#############
+#.###.Löscht.erste.Zeile.der.dirBeets-File
+#.#############.
+sed -i '1d' "$listBeets"
+exit 1
+
+else
+
+#.###########################
+#.##.Referenzdatei.ist.leer
+#.###########################
+#
+#.#############
+#.###.Wiederholten.Import.vorbereiten
+#.#############.
+cat "$listBeets.bkp" | sed '/^#/d' | tee "$listBeets"
+echo "Import abgeschlossen: $(date)" | tee -a "$logBeets"
+
+#.#############
+#.###.Entfernen.der.Artefakte.&.leeren.Ordner
+#.#############.
+find "$MUS" -type f | egrep -i -v \
+'(OGG|AIFF|AU|BWF|CDDA|IFF-8SVX|IFF-16SV|RAW|WAV|FLAC|LA|PAC|M4A|APE|OptimFROG|RKA|SHN|TTA|WV|WMA|BRSTM|AST|AMR|MP2|MP3|Speex|GSM|WMA|AAC|MPC|VQF|RealAudio|OTS|SWA|VOX|VOC|DWD|SMP|AUP|BAND|CUST|MID|MUS|SIB|SID|LY|GYM|VGM|PSF|NSF|MOD|PTB|S3M|XM|IT|MT2|MNG|PSF|minipsf,|2sf,|RMJ|SPC|NIFF|MusicXML|TXM|YM|JAM|ASF|MP1|MSCZ|MPG|MSCZ,|ZIP|RAR)$' \
+| sed 's/\ /\ /g' | while read line; do rm -v "$line" ; done; find "$MUS" \
+-depth -type d -empty -exec rmdir -- {} \;
+
+#.#############
+#.###.Ordnergrößen.ermitteln
+#.#############.
+du -ks "$MUS/"* | sort -nr | cut -f2 | xargs -d '\n' du -sh | tee "$HOME/tmp/duMusic-$(date +%F)"
+
+#.#############
+#.###.ob.letzterstellter.Ordner.Musik.enthält
+#.#############.
+chkMus=$(find "$VOL/$xydirs" -type f | wc -l)
+if [ "$chkMus" = 0 ]; then
+
+#.#############
+#.###.Ausgabe.nicht.importierter.Musik
+#.#############.
+#find.$MUS.-type.f.-fprint.$HOME/.logfiles/music$(date.+%F).list
+yad --center --image-on-top --text "Musikordner werden zusammengefügt..."
+
+#.###########################
+#.###########################
+#.#.Ordner.archivieren.&.Script.deaktivieren
+#.###########################
+#.###########################
+mv -v "$VOL/$xydirs" "$VOL/x$xydirs"
+echo "Ordner $VOL/$i erfolgreich archiviert - $(date +%F_%T)" | tee -a "$logBeets"
+mv "$0" "x$0"
+else
+
+#.###########################
+#.##.Neuen.Ordner.anlegen
+#.###########################
+mkdir -p "$VOL/MSK$xz"
+fi
+fi
+
+#.###########################
+#.##.EOF
+#.###########################
+exit 0

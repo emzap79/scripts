@@ -1,0 +1,15 @@
+#!/bin/bash
+file="$(cmus-remote -C 'echo {}')"
+trck=$(cmus-remote -Q | grep title | sed 's/tag title //g')
+artst=$(cmus-remote -Q | grep 'tag artist' | sed 's/tag artist //g')
+
+if [ -f "$file" ]
+then
+    #/bin/rm "$file" &
+    /usr/bin/trash "$file" &
+    cmus-remote -C 'win-remove'
+    cmus-remote -C 'echo You have deleted the selected track now!'
+    #cmus-remote -C 'update-cache'
+else
+    echo "Oop, couldn't find selected track" >&2
+fi

@@ -1,0 +1,32 @@
+#!/bin/sh
+# ###########################
+# http://www.imagemagick.org/discourse-server/viewtopic.php?f=1&t=16927
+# ###########################
+# crop="x100+0+0"  # orig script
+# ###########################
+
+if [ -e "$1" ]; then
+    for i in "$@"; do
+        convert \( "$i" \
+            -gravity center \
+            +repage \) \
+            \( +clone \
+            -level 0x30% \
+            -alpha set \
+            -write foobar.png \) \
+            -alpha off \
+            -background white \
+            -compose copy_opacity \
+            -composite "fade_$i.png"
+    done
+    display vid:fade_*.png
+else
+    echo "usage: $0 <file1><file2><file3><file...>"
+fi
+
+# ###########################
+# Optionen
+# ###########################
+# -sparse-color Barycentric '0,0 white 0,%[fx:h-1] black' \
+# -channel A -sparse-color Barycentric ' 0,%[fx:h*2/3] opaque 0,%[fx:h+0.5] transparent ' \
+# -crop "$crop" \
